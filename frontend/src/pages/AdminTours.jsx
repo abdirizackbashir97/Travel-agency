@@ -1,355 +1,264 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { 
-  Plus, Edit, Trash2, Search, Save, X, 
-  Package, MapPin, Clock, DollarSign, 
-  CheckCircle, AlertCircle, RefreshCw, Star, Image
-} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import toast, { Toaster } from 'react-hot-toast';
 
 const AdminTours = () => {
+  const navigate = useNavigate();
   const [tours, setTours] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingTour, setEditingTour] = useState(null);
-  const [notification, setNotification] = useState(null);
+  const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
+    tour_name: '',
     location: '',
-    price: '',
-    duration: '',
+    country: '',
     rating: '',
-    description: '',
-    includes: '',
-    badge: '',
-    badgeColor: 'bg-green-500',
-    image: ''
+    duration_days: '',
+    price_per_person: '',
+    description: ''
   });
 
   useEffect(() => {
-    loadTours();
+    const token = localStorage.getItem('accessToken');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    
+    if (!token || user.role !== 'admin') {
+      navigate('/login');
+      return;
+    }
+    
+    fetchTours();
   }, []);
 
-  const loadTours = () => {
-    setLoading(true);
-    const saved = localStorage.getItem('adminTours');
-    if (saved) {
-      setTours(JSON.parse(saved));
-    } else {
-      const defaultTours = [
-        {
-          id: 1,
-          name: 'Maldives Escape',
-          location: 'Maldives',
-          price: 780,
-          duration: '4 Days / 3 Nights',
-          rating: 4.9,
-          description: 'Overwater bungalows and crystal clear waters.',
-          includes: 'Flight + Hotel + Transfer',
-          badge: 'BEST SELLER',
-          badgeColor: 'bg-green-500',
-          image: '/images/tours/tour_1.png'
-        },
-        {
-          id: 2,
-          name: 'Kenya Safari Adventure',
-          location: 'Kenya',
-          price: 950,
-          duration: '5 Days / 4 Nights',
-          rating: 4.8,
-          description: 'Witness the Great Migration and spot the Big Five.',
-          includes: 'Safari + Hotel + Meals',
-          badge: 'FAMILY PACKAGE',
-          badgeColor: 'bg-blue-500',
-          image: '/images/tours/tour_2.png'
-        }
-      ];
-      setTours(defaultTours);
-      localStorage.setItem('adminTours', JSON.stringify(defaultTours));
-    }
-    setLoading(false);
-  };
-
-  const showNotification = (message, type = 'success') => {
-    setNotification({ message, type });
-    setTimeout(() => setNotification(null), 3000);
-  };
-
-  const handleAdd = () => {
-    setEditingTour(null);
-    setFormData({
-      name: '',
-      location: '',
-      price: '',
-      duration: '',
-      rating: '',
-      description: '',
-      includes: '',
-      badge: '',
-      badgeColor: 'bg-green-500',
-      image: ''
-    });
-    setIsModalOpen(true);
-  };
-
-  const handleEdit = (tour) => {
-    setEditingTour(tour);
-    setFormData({
-      name: tour.name,
-      location: tour.location,
-      price: tour.price,
-      duration: tour.duration,
-      rating: tour.rating,
-      description: tour.description,
-      includes: tour.includes,
-      badge: tour.badge,
-      badgeColor: tour.badgeColor,
-      image: tour.image || ''
-    });
-    setIsModalOpen(true);
-  };
-
-  const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to delete this tour?')) {
-      const updated = tours.filter(t => t.id !== id);
-      setTours(updated);
-      localStorage.setItem('adminTours', JSON.stringify(updated));
-      showNotification('Tour deleted successfully!');
+  const fetchTours = async () => {
+    try {
+      const response = await fetch('http://localhost:5002/api/tours');
+      const data = await response.json();
+      setTours(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Error fetching tours:', error);
+      toast.error('Failed to load tours');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.location || !formData.price || !formData.image) {
-      showNotification('Please fill in all required fields', 'error');
+    if (!formData.tour_name || !formData.location || !formData.country || !formData.duration_days || !formData.price_per_person) {
+      toast.error('Please fill in all required fields');
       return;
     }
 
-    if (editingTour) {
-      const updated = tours.map(t => 
-        t.id === editingTour.id 
-          ? { ...formData, id: t.id, price: parseFloat(formData.price), rating: parseFloat(formData.rating) || 4.5 }
-          : t
-      );
-      setTours(updated);
-      localStorage.setItem('adminTours', JSON.stringify(updated));
-      showNotification('Tour updated successfully!');
-    } else {
-      const newTour = {
-        ...formData,
-        id: Date.now(),
-        price: parseFloat(formData.price),
-        rating: parseFloat(formData.rating) || 4.5
-      };
-      const updated = [...tours, newTour];
-      setTours(updated);
-      localStorage.setItem('adminTours', JSON.stringify(updated));
-      showNotification('New tour added successfully!');
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch('http://localhost:5002/api/tours', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          tour_name: formData.tour_name,
+          location: formData.location,
+          country: formData.country,
+          rating: parseFloat(formData.rating) || 0,
+          duration_days: parseInt(formData.duration_days),
+          price_per_person: parseFloat(formData.price_per_person),
+          description: formData.description || ''
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success('✅ Tour added successfully!');
+        setFormData({
+          tour_name: '',
+          location: '',
+          country: '',
+          rating: '',
+          duration_days: '',
+          price_per_person: '',
+          description: ''
+        });
+        setShowForm(false);
+        fetchTours();
+      } else {
+        toast.error(data.error || 'Failed to add tour');
+      }
+    } catch (error) {
+      console.error('Error adding tour:', error);
+      toast.error('Network error');
     }
-    setIsModalOpen(false);
   };
 
-  const filteredTours = tours.filter(t => 
-    t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    t.location.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleDelete = async (id) => {
+    if (!confirm('Are you sure you want to delete this tour?')) return;
+    
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(`http://localhost:5002/api/tours/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
 
-  const badgeOptions = [
-    { value: 'bg-green-500', label: 'Green' },
-    { value: 'bg-blue-500', label: 'Blue' },
-    { value: 'bg-pink-500', label: 'Pink' },
-    { value: 'bg-yellow-500', label: 'Yellow' },
-    { value: 'bg-purple-500', label: 'Purple' },
-    { value: 'bg-red-500', label: 'Red' },
-  ];
+      if (response.ok) {
+        toast.success('Tour deleted successfully');
+        fetchTours();
+      } else {
+        toast.error('Failed to delete tour');
+      }
+    } catch (error) {
+      console.error('Error deleting tour:', error);
+      toast.error('Network error');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-gray-600">Loading tours...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      {notification && (
-        <div className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 ${
-          notification.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-        }`}>
-          {notification.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
-          {notification.message}
+    <div className="min-h-screen bg-gray-50">
+      <Toaster position="top-right" />
+      
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">🧳 Manage Tours</h1>
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+          >
+            {showForm ? 'Cancel' : '+ Add Tour'}
+          </button>
         </div>
-      )}
 
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-            <Link to="/admin" className="hover:text-gray-700">Dashboard</Link>
-            <span>›</span>
-            <span className="text-gray-900 font-medium">Tours</span>
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900">Manage Tours</h1>
-          <p className="text-gray-500 mt-1">Add, edit, and delete tour packages</p>
-        </div>
-        <button onClick={handleAdd} className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center gap-2">
-          <Plus className="w-4 h-4" />
-          Add Tour
-        </button>
-      </div>
-
-      <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input type="text" placeholder="Search tours..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-600" />
-          </div>
-          <div className="flex items-center gap-4 text-sm">
-            <span className="text-gray-500">Total: <strong className="text-gray-900">{tours.length}</strong></span>
-            <button onClick={loadTours} className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
-              <RefreshCw className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tour</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {loading ? (
-                <tr><td colSpan="7" className="px-6 py-8 text-center text-gray-500">Loading...</td></tr>
-              ) : filteredTours.length === 0 ? (
-                <tr><td colSpan="7" className="px-6 py-8 text-center text-gray-500">No tours found</td></tr>
-              ) : (
-                filteredTours.map((tour) => (
-                  <tr key={tour.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <img src={tour.image || '/placeholder.svg'} alt={tour.name} className="w-12 h-12 rounded-lg object-cover border border-gray-200" onError={(e) => { e.target.src = '/placeholder.svg'; }} />
-                    </td>
-                    <td className="px-6 py-4 font-medium text-gray-900">{tour.name}</td>
-                    <td className="px-6 py-4 text-gray-600">{tour.location}</td>
-                    <td className="px-6 py-4 font-medium text-blue-600">${tour.price}</td>
-                    <td className="px-6 py-4 text-gray-600">{tour.duration}</td>
-                    <td className="px-6 py-4">
-                      <span className="flex items-center gap-1">
-                        <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                        {tour.rating}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => handleEdit(tour)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => handleDelete(tour.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900">
-                {editingTour ? 'Edit Tour' : 'Add New Tour'}
-              </h2>
-              <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                <X className="w-5 h-5 text-gray-500" />
+        {showForm && (
+          <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
+            <h2 className="text-xl font-bold text-gray-800 mb-4">Add New Tour</h2>
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input
+                type="text"
+                name="tour_name"
+                placeholder="Tour Name *"
+                value={formData.tour_name}
+                onChange={(e) => setFormData({...formData, tour_name: e.target.value})}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                required
+              />
+              <input
+                type="text"
+                name="location"
+                placeholder="Location *"
+                value={formData.location}
+                onChange={(e) => setFormData({...formData, location: e.target.value})}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                required
+              />
+              <input
+                type="text"
+                name="country"
+                placeholder="Country *"
+                value={formData.country}
+                onChange={(e) => setFormData({...formData, country: e.target.value})}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                required
+              />
+              <input
+                type="number"
+                name="rating"
+                placeholder="Rating (0-5)"
+                value={formData.rating}
+                onChange={(e) => setFormData({...formData, rating: e.target.value})}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                step="0.1"
+                min="0"
+                max="5"
+              />
+              <input
+                type="number"
+                name="duration_days"
+                placeholder="Duration (days) *"
+                value={formData.duration_days}
+                onChange={(e) => setFormData({...formData, duration_days: e.target.value})}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                required
+              />
+              <input
+                type="number"
+                name="price_per_person"
+                placeholder="Price per person *"
+                value={formData.price_per_person}
+                onChange={(e) => setFormData({...formData, price_per_person: e.target.value})}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                required
+              />
+              <textarea
+                name="description"
+                placeholder="Description"
+                value={formData.description}
+                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                className="col-span-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                rows="3"
+              />
+              <button
+                type="submit"
+                className="col-span-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+              >
+                Add Tour
               </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Image URL <span className="text-red-500">*</span></label>
-                <div className="relative">
-                  <Image className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <input type="url" value={formData.image} onChange={(e) => setFormData({ ...formData, image: e.target.value })} className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="https://example.com/tour.jpg" required />
-                </div>
-                {formData.image && (
-                  <div className="mt-2">
-                    <img src={formData.image} alt="Preview" className="h-24 w-full object-contain rounded-lg border border-gray-200 bg-gray-50" onError={(e) => { e.target.src = '/placeholder.svg'; }} />
-                  </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tour Name <span className="text-red-500">*</span></label>
-                  <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600" required />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Location <span className="text-red-500">*</span></label>
-                  <input type="text" value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600" required />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Price ($) <span className="text-red-500">*</span></label>
-                  <input type="number" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600" required />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
-                  <input type="text" value={formData.duration} onChange={(e) => setFormData({ ...formData, duration: e.target.value })} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="4 Days / 3 Nights" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Rating</label>
-                  <input type="number" step="0.1" value={formData.rating} onChange={(e) => setFormData({ ...formData, rating: e.target.value })} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="4.5" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Badge</label>
-                  <input type="text" value={formData.badge} onChange={(e) => setFormData({ ...formData, badge: e.target.value })} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="BEST SELLER" />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Badge Color</label>
-                <select value={formData.badgeColor} onChange={(e) => setFormData({ ...formData, badgeColor: e.target.value })} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600">
-                  {badgeOptions.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Includes</label>
-                <input type="text" value={formData.includes} onChange={(e) => setFormData({ ...formData, includes: e.target.value })} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="Flight + Hotel + Transfer" />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows="3" className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600" />
-              </div>
-
-              <div className="flex gap-3 pt-4 border-t border-gray-200">
-                <button type="submit" className="flex-1 px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
-                  <Save className="w-4 h-4" />
-                  {editingTour ? 'Update Tour' : 'Add Tour'}
-                </button>
-                <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-2.5 border border-gray-200 text-gray-600 font-medium rounded-lg hover:bg-gray-50 transition-colors">
-                  Cancel
-                </button>
-              </div>
             </form>
           </div>
+        )}
+
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tour Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Country</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Days</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {tours.map((tour) => (
+                  <tr key={tour.id} className="hover:bg-gray-50 transition">
+                    <td className="px-6 py-4 text-sm text-gray-900">{tour.id}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{tour.tour_name}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{tour.location}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{tour.country}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{tour.duration_days}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">${tour.price_per_person}</td>
+                    <td className="px-6 py-4 text-sm space-x-2">
+                      <button
+                        onClick={() => handleDelete(tour.id)}
+                        className="text-red-600 hover:text-red-800 font-medium"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };

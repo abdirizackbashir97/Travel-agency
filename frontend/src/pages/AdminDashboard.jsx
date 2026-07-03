@@ -1,352 +1,214 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import {
-  Users, Plane, Hotel, MapPin, Calendar, CreditCard,
-  Star, ArrowRight, TrendingUp, TrendingDown,
-  DollarSign, Package, Download,
-  BarChart, Globe, Briefcase, Award, Clock, Zap
-} from 'lucide-react';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Area,
-  AreaChart
-} from 'recharts';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 
 const AdminDashboard = () => {
-  const [timeRange, setTimeRange] = useState('month');
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+  const [stats, setStats] = useState({
+    total_destinations: 0,
+    total_hotels: 0,
+    total_flights: 0,
+    total_tours: 0,
+    total_bookings: 0,
+    total_users: 0
+  });
+  const [destinations, setDestinations] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const revenueData = [
-    { month: 'Jan', revenue: 4200, bookings: 45 },
-    { month: 'Feb', revenue: 5800, bookings: 52 },
-    { month: 'Mar', revenue: 4900, bookings: 48 },
-    { month: 'Apr', revenue: 7200, bookings: 68 },
-    { month: 'May', revenue: 8900, bookings: 82 },
-    { month: 'Jun', revenue: 6500, bookings: 60 },
-    { month: 'Jul', revenue: 9400, bookings: 88 },
-    { month: 'Aug', revenue: 8200, bookings: 76 },
-    { month: 'Sep', revenue: 7100, bookings: 65 },
-    { month: 'Oct', revenue: 9600, bookings: 92 },
-    { month: 'Nov', revenue: 10500, bookings: 98 },
-    { month: 'Dec', revenue: 11200, bookings: 105 },
-  ];
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken');
+    const userData = JSON.parse(localStorage.getItem('user') || '{}');
+    
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+    
+    if (userData.role !== 'admin') {
+      navigate('/dashboard');
+      return;
+    }
+    
+    setUser(userData);
+    fetchDashboardData();
+  }, []);
 
-  const destinationData = [
-    { name: 'Dubai', value: 320, color: '#2563EB' },
-    { name: 'Paris', value: 245, color: '#10B981' },
-    { name: 'Tokyo', value: 210, color: '#F59E0B' },
-    { name: 'Maldives', value: 185, color: '#8B5CF6' },
-    { name: 'Zanzibar', value: 145, color: '#EC4899' },
-  ];
+  const fetchDashboardData = async () => {
+    try {
+      // Fetch stats
+      const statsRes = await fetch('http://localhost:5002/api/stats');
+      if (statsRes.ok) {
+        const statsData = await statsRes.json();
+        setStats(statsData);
+      }
 
-  const stats = [
-    { 
-      title: 'Total Bookings', 
-      value: '1,254', 
-      change: '+12%',
-      icon: Calendar,
-      color: '#2563EB'
-    },
-    { 
-      title: 'Revenue', 
-      value: '$89,420', 
-      change: '+18%',
-      icon: DollarSign,
-      color: '#10B981'
-    },
-    { 
-      title: 'Customers', 
-      value: '2,350', 
-      change: '+8%',
-      icon: Users,
-      color: '#8B5CF6'
-    },
-    { 
-      title: 'Active Packages', 
-      value: '145', 
-      change: '+5%',
-      icon: Package,
-      color: '#F59E0B'
-    },
-  ];
-
-  const quickLinks = [
-    { title: 'Destinations', icon: MapPin, link: '/admin/destinations' },
-    { title: 'Flights', icon: Plane, link: '/admin/flights' },
-    { title: 'Tours', icon: Package, link: '/admin/tours' },
-    { title: 'Hotels', icon: Hotel, link: '/admin/hotels' },
-  ];
-
-  const recentBookings = [
-    { id: 'BK-1254', customer: 'Sarah Johnson', destination: 'Dubai, UAE', date: 'May 1, 2024', amount: '$1,250', status: 'Completed' },
-    { id: 'BK-1253', customer: 'Michael Brown', destination: 'Paris, France', date: 'May 20, 2024', amount: '$950', status: 'Pending' },
-    { id: 'BK-1252', customer: 'Emily Davis', destination: 'Maldives', date: 'May 19, 2024', amount: '$2,150', status: 'Completed' },
-    { id: 'BK-1251', customer: 'David Wilson', destination: 'Dubai, UAE', date: 'May 19, 2024', amount: '$1,100', status: 'Cancelled' },
-    { id: 'BK-1250', customer: 'Jessica Lee', destination: 'Swiss Alps', date: 'May 18, 2024', amount: '$1,780', status: 'Cancelled' },
-  ];
-
-  const getStatusColor = (status) => {
-    switch(status) {
-      case 'Completed': return 'text-green-600 bg-green-50';
-      case 'Pending': return 'text-yellow-600 bg-yellow-50';
-      case 'Cancelled': return 'text-red-600 bg-red-50';
-      default: return 'text-gray-600 bg-gray-50';
+      // Fetch destinations
+      const destRes = await fetch('http://localhost:5002/api/destinations');
+      if (destRes.ok) {
+        const destData = await destRes.json();
+        setDestinations(Array.isArray(destData) ? destData : []);
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white p-4 rounded-lg shadow-lg border border-gray-100">
-          <p className="text-sm font-medium text-gray-900">{label}</p>
-          <p className="text-sm text-blue-600">Revenue: ${payload[0].value}</p>
-          {payload[1] && (
-            <p className="text-sm text-green-600">Bookings: {payload[1].value}</p>
-          )}
+  const handleLogout = () => {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-gray-600">Loading dashboard...</p>
         </div>
-      );
-    }
-    return null;
-  };
+      </div>
+    );
+  }
+
+  const statCards = [
+    { title: 'Destinations', value: stats.total_destinations || 0, icon: '🌍', color: 'from-blue-500 to-blue-600' },
+    { title: 'Hotels', value: stats.total_hotels || 0, icon: '🏨', color: 'from-green-500 to-green-600' },
+    { title: 'Flights', value: stats.total_flights || 0, icon: '✈️', color: 'from-purple-500 to-purple-600' },
+    { title: 'Tours', value: stats.total_tours || 0, icon: '🧳', color: 'from-orange-500 to-orange-600' },
+    { title: 'Bookings', value: stats.total_bookings || 0, icon: '📅', color: 'from-pink-500 to-pink-600' },
+    { title: 'Users', value: stats.total_users || 0, icon: '👤', color: 'from-indigo-500 to-indigo-600' },
+  ];
 
   return (
-    <div className="bg-gray-50 min-h-screen -m-8 p-8">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-500 mt-1">Welcome back, Admin! 🎉</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-white transition-colors flex items-center gap-2">
-            <Download className="w-4 h-4" />
-            Export
-          </button>
-          <select
-            value={timeRange}
-            onChange={(e) => setTimeRange(e.target.value)}
-            className="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 bg-transparent"
-          >
-            <option value="week">This Week</option>
-            <option value="month">This Month</option>
-            <option value="quarter">This Quarter</option>
-            <option value="year">This Year</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Stats - Clean without boxes */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <div key={index} className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: `${stat.color}15` }}>
-                <Icon className="w-6 h-6" style={{ color: stat.color }} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                <p className="text-sm text-gray-500">{stat.title}</p>
-                <span className="text-xs text-green-600">{stat.change}</span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Quick Links - Clean navigation */}
-      <div className="mb-10">
-        <div className="flex items-center gap-2 text-sm text-gray-400 mb-3">
-          <BarChart className="w-4 h-4" />
-          <span>Quick Access</span>
-        </div>
-        <div className="flex items-center gap-8 flex-wrap">
-          {quickLinks.map((item, index) => {
-            const Icon = item.icon;
-            return (
-              <Link
-                key={index}
-                to={item.link}
-                className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors group"
-              >
-                <Icon className="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition-colors" />
-                {item.title}
-              </Link>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
-        <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="font-semibold text-gray-900">Revenue Overview</h3>
-            <div className="flex items-center gap-4 text-xs text-gray-500">
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-blue-600"></span>
-                Revenue
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                Bookings
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">✈️</span>
+              <h1 className="text-xl font-bold text-gray-800">Admin Dashboard</h1>
+              <span className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-full">
+                Admin
               </span>
             </div>
-          </div>
-          <ResponsiveContainer width="100%" height={280}>
-            <AreaChart data={revenueData}>
-              <defs>
-                <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#2563EB" stopOpacity={0.1}/>
-                  <stop offset="95%" stopColor="#2563EB" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
-              <XAxis dataKey="month" stroke="#9CA3AF" fontSize={12} tickLine={false} />
-              <YAxis yAxisId="left" stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} />
-              <YAxis yAxisId="right" orientation="right" stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Area
-                yAxisId="left"
-                type="monotone"
-                dataKey="revenue"
-                stroke="#2563EB"
-                strokeWidth={2}
-                fill="url(#colorRevenue)"
-              />
-              <Line
-                yAxisId="right"
-                type="monotone"
-                dataKey="bookings"
-                stroke="#10B981"
-                strokeWidth={2}
-                dot={{ fill: '#10B981', strokeWidth: 1, r: 4 }}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="bg-white rounded-xl border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="font-semibold text-gray-900">Top Destinations</h3>
-            <Link to="/admin/destinations" className="text-xs text-blue-600 hover:text-blue-700">
-              View All
-            </Link>
-          </div>
-          <ResponsiveContainer width="100%" height={280}>
-            <PieChart>
-              <Pie
-                data={destinationData}
-                cx="50%"
-                cy="50%"
-                innerRadius={50}
-                outerRadius={90}
-                paddingAngle={3}
-                dataKey="value"
-              >
-                {destinationData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip
-                content={({ active, payload }) => {
-                  if (active && payload && payload.length) {
-                    return (
-                      <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-100">
-                        <p className="text-sm font-medium text-gray-900">{payload[0].name}</p>
-                        <p className="text-sm text-gray-600">{payload[0].value} bookings</p>
-                      </div>
-                    );
-                  }
-                  return null;
-                }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="flex flex-wrap justify-center gap-3 mt-2">
-            {destinationData.map((item, index) => (
-              <span key={index} className="flex items-center gap-1 text-xs text-gray-600">
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }}></span>
-                {item.name}
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-gray-600">
+                Welcome, <span className="font-semibold">{user?.firstName || 'Admin'}</span>
               </span>
-            ))}
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+              >
+                Logout
+              </button>
+            </div>
           </div>
+        </div>
+      </header>
+
+      {/* Stats Cards */}
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          {statCards.map((stat, index) => (
+            <div key={index} className={`bg-gradient-to-r ${stat.color} rounded-xl p-4 text-white shadow-lg`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs opacity-90">{stat.title}</p>
+                  <p className="text-2xl font-bold">{stat.value}</p>
+                </div>
+                <span className="text-2xl">{stat.icon}</span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Recent Bookings - Clean table */}
-      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h3 className="font-semibold text-gray-900">Recent Bookings</h3>
-          <Link to="/admin/bookings" className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1">
-            View All <ArrowRight className="w-4 h-4" />
+      {/* Quick Actions */}
+      <div className="max-w-7xl mx-auto px-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          <Link to="/admin/destinations" className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition text-center border border-gray-100">
+            <div className="text-2xl mb-1">🌍</div>
+            <p className="text-xs font-medium text-gray-700">Destinations</p>
+          </Link>
+          <Link to="/admin/hotels" className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition text-center border border-gray-100">
+            <div className="text-2xl mb-1">🏨</div>
+            <p className="text-xs font-medium text-gray-700">Hotels</p>
+          </Link>
+          <Link to="/admin/flights" className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition text-center border border-gray-100">
+            <div className="text-2xl mb-1">✈️</div>
+            <p className="text-xs font-medium text-gray-700">Flights</p>
+          </Link>
+          <Link to="/admin/tours" className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition text-center border border-gray-100">
+            <div className="text-2xl mb-1">🧳</div>
+            <p className="text-xs font-medium text-gray-700">Tours</p>
+          </Link>
+          <Link to="/admin/bookings" className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition text-center border border-gray-100">
+            <div className="text-2xl mb-1">📅</div>
+            <p className="text-xs font-medium text-gray-700">Bookings</p>
+          </Link>
+          <Link to="/admin/users" className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition text-center border border-gray-100">
+            <div className="text-2xl mb-1">👤</div>
+            <p className="text-xs font-medium text-gray-700">Users</p>
           </Link>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Booking</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Customer</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Destination</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Amount</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {recentBookings.map((booking) => (
-                <tr key={booking.id} className="hover:bg-gray-50/50 transition-colors">
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{booking.id}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{booking.customer}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{booking.destination}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{booking.date}</td>
-                  <td className="px-6 py-4 text-sm font-semibold text-blue-600">{booking.amount}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-3 py-1 text-xs font-medium rounded-full ${getStatusColor(booking.status)}`}>
-                      {booking.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
       </div>
 
-      {/* Quick Stats - Clean grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
-        <div>
-          <p className="text-sm text-gray-400">Average Booking</p>
-          <p className="text-2xl font-bold text-gray-900">$712</p>
-          <span className="text-xs text-green-600">+8.2%</span>
-        </div>
-        <div>
-          <p className="text-sm text-gray-400">Satisfaction</p>
-          <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-gray-900">4.8</span>
-            <span className="text-sm text-gray-400">/ 5.0</span>
+      {/* Recent Destinations */}
+      <div className="max-w-7xl mx-auto px-4 pb-8">
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <h3 className="text-lg font-semibold text-gray-800">Recent Destinations</h3>
+            <Link
+              to="/admin/destinations"
+              className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 transition"
+            >
+              + Add Destination
+            </Link>
           </div>
-          <span className="text-xs text-green-600">★ Excellent</span>
-        </div>
-        <div>
-          <p className="text-sm text-gray-400">Total Revenue</p>
-          <p className="text-2xl font-bold text-gray-900">$89,420</p>
-          <span className="text-xs text-green-600">+18.5%</span>
-        </div>
-        <div>
-          <p className="text-sm text-gray-400">Growth Rate</p>
-          <p className="text-2xl font-bold text-green-600">+5.1%</p>
-          <span className="text-xs text-gray-400">vs last quarter</span>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Country</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {destinations.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
+                      No destinations found. Add your first destination!
+                    </td>
+                  </tr>
+                ) : (
+                  destinations.slice(0, 10).map((dest) => (
+                    <tr key={dest.id} className="hover:bg-gray-50 transition">
+                      <td className="px-6 py-4 text-sm text-gray-900">{dest.id}</td>
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900">{dest.name}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600">{dest.country}</td>
+                      <td className="px-6 py-4 text-sm">
+                        <span className="px-2 py-1 rounded-full text-xs font-medium capitalize bg-blue-100 text-blue-700">
+                          {dest.category}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">${dest.price_per_night}</td>
+                      <td className="px-6 py-4 text-sm space-x-2">
+                        <button className="text-indigo-600 hover:text-indigo-800 font-medium">Edit</button>
+                        <button className="text-red-600 hover:text-red-800 font-medium">Delete</button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

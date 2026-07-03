@@ -37,67 +37,12 @@ const About = () => {
   ];
 
   const airlines = [
-    { 
-      name: 'QATAR AIRWAYS', 
-      color: '#8b1c8b',
-      logo: (
-        <div className="text-center">
-          <div className="text-xl font-bold tracking-wider" style={{ color: '#8b1c8b' }}>QATAR</div>
-          <div className="text-xs font-semibold tracking-[0.2em]" style={{ color: '#8b1c8b' }}>AIRWAYS</div>
-          <div className="text-[10px] font-light tracking-wider" style={{ color: '#8b1c8b' }}>القطرية</div>
-        </div>
-      )
-    },
-    { 
-      name: 'KENYA AIRWAYS', 
-      color: '#dc2626',
-      logo: (
-        <div className="text-center">
-          <div className="text-3xl font-bold" style={{ color: '#dc2626' }}>R</div>
-          <div className="text-sm font-bold tracking-wide" style={{ color: '#dc2626' }}>Kenya Airways</div>
-          <div className="text-[10px] italic text-gray-500">The Pride of Africa</div>
-        </div>
-      )
-    },
-    { 
-      name: 'TURKISH AIRLINES', 
-      color: '#dc2626',
-      logo: (
-        <div className="text-center">
-          <div className="text-xl font-bold tracking-wider" style={{ color: '#dc2626' }}>TURKISH</div>
-          <div className="text-sm font-semibold tracking-[0.15em]" style={{ color: '#dc2626' }}>AIRLINES</div>
-        </div>
-      )
-    },
-    { 
-      name: 'EMIRATES', 
-      color: '#d97706',
-      logo: (
-        <div className="text-center">
-          <div className="text-2xl font-bold tracking-wider" style={{ color: '#d97706' }}>EMIRATES</div>
-        </div>
-      )
-    },
-    { 
-      name: 'ETHIOPIAN AIRLINES', 
-      color: '#16a34a',
-      logo: (
-        <div className="text-center">
-          <div className="text-xl font-bold tracking-wider" style={{ color: '#16a34a' }}>ETHIOPIAN</div>
-          <div className="text-sm font-semibold tracking-[0.15em]" style={{ color: '#16a34a' }}>AIRLINES</div>
-        </div>
-      )
-    },
-    { 
-      name: 'BRITISH AIRWAYS', 
-      color: '#2a5c8a',
-      logo: (
-        <div className="text-center">
-          <div className="text-xl font-bold tracking-wider" style={{ color: '#2a5c8a' }}>BRITISH</div>
-          <div className="text-sm font-semibold tracking-[0.15em]" style={{ color: '#2a5c8a' }}>AIRWAYS</div>
-        </div>
-      )
-    }
+    'QATAR AIRWAYS',
+    'KENYA AIRWAYS',
+    'TURKISH AIRLINES',
+    'EMIRATES',
+    'ETHIOPIAN AIRLINES',
+    'BRITISH AIRWAYS'
   ];
 
   const testimonials = [
@@ -199,18 +144,6 @@ const About = () => {
                 src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&h=800&fit=crop" 
                 alt="Travel Experience" 
                 className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                  e.target.parentElement.innerHTML = `
-                    <div class="w-full h-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center">
-                      <div class="text-center text-white p-8">
-                        <Globe class="w-20 h-20 mx-auto mb-4 opacity-80" />
-                        <p class="text-xl font-semibold">Explore the World</p>
-                        <p class="text-sm opacity-80">With SkyRoute</p>
-                      </div>
-                    </div>
-                  `;
-                }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-blue-900/20 to-transparent"></div>
               <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
@@ -230,25 +163,13 @@ const About = () => {
       </div>
 
       {/* Map & Stats Section */}
-      <div className="max-w-7xl mx-auto px-4 py-20 bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 py-20">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-stretch">
           <div className="relative rounded-3xl overflow-hidden shadow-2xl group">
             <img 
               src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=800&h=600&fit=crop" 
               alt="World Map" 
               className="w-full h-[500px] object-cover transition-transform duration-700 group-hover:scale-105"
-              onError={(e) => {
-                e.target.style.display = 'none';
-                e.target.parentElement.innerHTML = `
-                  <div class="w-full h-[500px] bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center">
-                    <div class="text-center text-white">
-                      <Globe class="w-24 h-24 mx-auto mb-4 opacity-80" />
-                      <p class="text-2xl font-semibold">Global Reach</p>
-                      <p class="text-sm opacity-80">Connecting 50+ Countries</p>
-                    </div>
-                  </div>
-                `;
-              }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-blue-950/80 via-blue-950/20 to-transparent"></div>
             <div className="absolute top-6 left-6">
@@ -298,8 +219,8 @@ const About = () => {
         </div>
       </div>
 
-      {/* Why Choose SkyRoute - Steps/Timeline Design */}
-      <div className="max-w-7xl mx-auto px-4 py-20 bg-gradient-to-b from-white to-gray-50">
+      {/* Why Choose SkyRoute */}
+      <div className="max-w-7xl mx-auto px-4 py-20">
         <div className="text-center mb-16">
           <div className="flex items-center justify-center gap-2 text-blue-600 font-semibold text-sm mb-3">
             <span className="w-12 h-0.5 bg-blue-600"></span>
@@ -313,7 +234,6 @@ const About = () => {
         </div>
 
         <div className="relative">
-          {/* Vertical Timeline Line */}
           <div className="hidden lg:block absolute left-1/2 transform -translate-x-1/2 w-0.5 h-full bg-gradient-to-b from-blue-300 via-blue-400 to-blue-300"></div>
           
           <div className="space-y-12 lg:space-y-0">
@@ -321,38 +241,31 @@ const About = () => {
               <div key={index} className={`relative flex flex-col lg:flex-row items-center gap-8 lg:gap-12 ${
                 index % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'
               }`}>
-                {/* Timeline Dot */}
                 <div className="hidden lg:block absolute left-1/2 transform -translate-x-1/2 w-6 h-6 rounded-full border-4 border-white shadow-lg z-10"
                   style={{ background: feature.color }}>
                   <div className="absolute inset-0 rounded-full animate-ping opacity-75" style={{ background: feature.color }}></div>
                 </div>
 
-                {/* Content */}
                 <div className={`w-full lg:w-5/12 ${index % 2 === 0 ? 'lg:text-right' : 'lg:text-left'}`}>
                   <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 group hover:-translate-y-1 border border-gray-100">
-                    {/* Step Number */}
                     <div className={`inline-block px-4 py-1 rounded-full text-xs font-bold text-white mb-4`}
                       style={{ background: feature.color }}>
                       Step {feature.step}
                     </div>
                     
-                    {/* Icon */}
                     <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 transition-transform duration-500 group-hover:scale-110`}
                       style={{ background: feature.lightColor }}>
                       <feature.icon className="w-7 h-7" style={{ color: feature.color }} />
                     </div>
                     
-                    {/* Title */}
                     <h3 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-blue-600 transition-colors duration-300">
                       {feature.title}
                     </h3>
                     
-                    {/* Description */}
                     <p className="text-gray-500 leading-relaxed">
                       {feature.desc}
                     </p>
                     
-                    {/* Decorative Arrow */}
                     <div className="mt-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-500"
                       style={{ color: feature.color }}>
                       <span className="text-sm font-medium">Learn more</span>
@@ -361,14 +274,12 @@ const About = () => {
                   </div>
                 </div>
 
-                {/* Empty space for alignment */}
                 <div className="hidden lg:block w-5/12"></div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Bottom Trust Badge */}
         <div className="mt-16 text-center">
           <div className="inline-flex items-center gap-4 bg-white border border-gray-200 rounded-2xl px-8 py-4 shadow-lg">
             <div className="flex -space-x-3">
@@ -389,7 +300,7 @@ const About = () => {
       </div>
 
       {/* Mission & Vision */}
-      <div className="max-w-7xl mx-auto px-4 py-20 bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 py-20">
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-2 text-blue-600 font-semibold text-sm mb-2">
             <span className="w-10 h-0.5 bg-blue-600"></span>
@@ -420,8 +331,8 @@ const About = () => {
         </div>
       </div>
 
-      {/* Trusted Partners */}
-      <div className="max-w-7xl mx-auto px-4 py-20 overflow-hidden">
+      {/* Trusted Partners - COMPLETELY NO BACKGROUNDS */}
+      <div className="max-w-7xl mx-auto px-4 py-20">
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-2 text-blue-600 font-semibold text-sm mb-2">
             <span className="w-10 h-0.5 bg-blue-600"></span>
@@ -431,28 +342,20 @@ const About = () => {
           <h2 className="text-3xl md:text-4xl font-bold text-gray-800">Our Trusted Partners</h2>
           <p className="text-gray-500 mt-2">We fly with the best airlines in the world</p>
         </div>
-        <div className="relative">
-          <div className="flex animate-scroll gap-8">
-            {airlines.map((airline, index) => (
-              <div key={index} className="flex-shrink-0">
-                <div className="flex flex-col items-center bg-white px-6 py-4 rounded-xl shadow-md border border-gray-100 min-w-[160px]">
-                  {airline.logo}
-                </div>
-              </div>
-            ))}
-            {airlines.map((airline, index) => (
-              <div key={`dup-${index}`} className="flex-shrink-0">
-                <div className="flex flex-col items-center bg-white px-6 py-4 rounded-xl shadow-md border border-gray-100 min-w-[160px]">
-                  {airline.logo}
-                </div>
-              </div>
-            ))}
-          </div>
+        <div className="flex flex-wrap justify-center gap-x-8 gap-y-3">
+          {airlines.map((airline, index) => (
+            <span 
+              key={index} 
+              className="text-gray-700 font-medium text-sm tracking-wide hover:text-blue-600 transition-colors"
+            >
+              {airline}
+            </span>
+          ))}
         </div>
       </div>
 
-      {/* Team */}
-      <div className="max-w-7xl mx-auto px-4 py-20 bg-gray-50">
+      {/* Team - Clean Version */}
+      <div className="max-w-7xl mx-auto px-4 py-20">
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-2 text-blue-600 font-semibold text-sm mb-2">
             <span className="w-10 h-0.5 bg-blue-600"></span>
@@ -545,25 +448,6 @@ const About = () => {
           </div>
         </div>
       </div>
-
-      <style>{`
-        @keyframes scroll {
-          0% {
-            transform: translateX(0);
-          }
-          100% {
-            transform: translateX(-50%);
-          }
-        }
-        .animate-scroll {
-          animation: scroll 25s linear infinite;
-          display: flex;
-          width: max-content;
-        }
-        .animate-scroll:hover {
-          animation-play-state: paused;
-        }
-      `}</style>
     </div>
   );
 };

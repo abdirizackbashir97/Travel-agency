@@ -11,6 +11,4 @@ function App() {
   );
 }
 
-export default App;import ChatWidget from './components/ChatWidget';
-// Add inside the return statement before closing div
-<ChatWidget />
+export default App;

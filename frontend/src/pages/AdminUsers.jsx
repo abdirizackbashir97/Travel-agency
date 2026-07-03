@@ -475,7 +475,7 @@ const AdminUsers = () => {
                   className={`flex-1 px-4 py-2 text-white font-medium rounded-lg transition-colors ${
                     selectedUser.status === 'active'
                       ? 'bg-yellow-600 hover:bg-yellow-700'
-                      : 'bg-green-600 hover:bg-green-700'
+                      : 'bg-blue-600 hover:bg-blue-700'
                   }`}
                 >
                   {selectedUser.status === 'active' ? 'Deactivate User' : 'Activate User'}
