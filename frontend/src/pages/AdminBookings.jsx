@@ -19,7 +19,7 @@ const AdminBookings = () => {
   const fetchBookings = async () => {
     try {
       // Get all bookings (admin sees all)
-      const response = await fetch('http://localhost:5002/api/bookings', {
+      const response = await fetch('http://localhost:5000/api/bookings', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
         }
@@ -36,7 +36,7 @@ const AdminBookings = () => {
 
   const updateBookingStatus = async (id, status) => {
     try {
-      const response = await fetch(`http://localhost:5002/api/bookings/${id}/status`, {
+      const response = await fetch(`http://localhost:5000/api/bookings/${id}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -61,7 +61,7 @@ const AdminBookings = () => {
     if (!confirm('Are you sure you want to cancel this booking?')) return;
 
     try {
-      const response = await fetch(`http://localhost:5002/api/bookings/${id}`, {
+      const response = await fetch(`http://localhost:5000/api/bookings/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`

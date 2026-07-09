@@ -36,14 +36,14 @@ const AdminDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       // Fetch stats
-      const statsRes = await fetch('http://localhost:5002/api/stats');
+      const statsRes = await fetch('http://localhost:5000/api/stats');
       if (statsRes.ok) {
         const statsData = await statsRes.json();
         setStats(statsData);
       }
 
       // Fetch destinations
-      const destRes = await fetch('http://localhost:5002/api/destinations');
+      const destRes = await fetch('http://localhost:5000/api/destinations');
       if (destRes.ok) {
         const destData = await destRes.json();
         setDestinations(Array.isArray(destData) ? destData : []);

@@ -24,7 +24,7 @@ const UserDashboard = () => {
 
   const fetchBookings = async () => {
     try {
-      const response = await fetch('http://localhost:5002/api/bookings', {
+      const response = await fetch('http://localhost:5000/api/bookings', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
         }

@@ -31,7 +31,7 @@ const AdminTours = () => {
 
   const fetchTours = async () => {
     try {
-      const response = await fetch('http://localhost:5002/api/tours');
+      const response = await fetch('http://localhost:5000/api/tours');
       const data = await response.json();
       setTours(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -52,7 +52,7 @@ const AdminTours = () => {
 
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch('http://localhost:5002/api/tours', {
+      const response = await fetch('http://localhost:5000/api/tours', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -98,7 +98,7 @@ const AdminTours = () => {
     
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch(`http://localhost:5002/api/tours/${id}`, {
+      const response = await fetch(`http://localhost:5000/api/tours/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`

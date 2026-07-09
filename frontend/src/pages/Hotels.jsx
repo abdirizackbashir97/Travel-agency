@@ -15,9 +15,20 @@ const Hotels = () => {
 
   const fetchHotels = async () => {
     try {
-      const response = await fetch('http://localhost:5002/api/hotels');
+      const response = await fetch('http://localhost:5000/api/hotels');
       const data = await response.json();
-      setHotels(Array.isArray(data) ? data : []);
+      console.log('Hotels API Response:', data);
+      
+      // Get hotels from the response
+      const hotelData = data.data || data.hotels || [];
+      console.log('Hotels found:', hotelData.length);
+      
+      setHotels(hotelData);
+      if (hotelData.length === 0) {
+        toast.error('No hotels found');
+      } else {
+        toast.success(`Found ${hotelData.length} hotels!`);
+      }
     } catch (error) {
       console.error('Error fetching hotels:', error);
       toast.error('Failed to load hotels');
@@ -42,7 +53,7 @@ const Hotels = () => {
     const matchesSearch = hotel.hotel_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           hotel.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           hotel.country?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'All' || hotel.category === selectedCategory;
+    const matchesCategory = selectedCategory === 'All' || hotel.category?.toLowerCase() === selectedCategory.toLowerCase();
     return matchesSearch && matchesCategory;
   });
 
@@ -62,7 +73,7 @@ const Hotels = () => {
   return (
     <>
       <Toaster position="top-right" />
-      
+
       <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <h1 className="text-3xl md:text-4xl font-bold mb-2">Find Your Perfect Stay</h1>
@@ -108,34 +119,35 @@ const Hotels = () => {
         {filteredHotels.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-gray-500 text-sm">No hotels found</p>
+            <p className="text-xs text-gray-400 mt-1">Try adjusting your search or category filter</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {filteredHotels.map((hotel) => (
               <div key={hotel.id} className="bg-white rounded-xl shadow-sm hover:shadow-lg transition overflow-hidden border border-gray-100">
-                <div className="p-3">
-                  <div className="flex justify-between items-start mb-0.5">
-                    <h3 className="font-semibold text-gray-800 text-xs sm:text-sm truncate max-w-[120px]">{hotel.hotel_name}</h3>
-                    <span className="text-yellow-400 text-[10px]">⭐</span>
+                <div className="p-4">
+                  <div className="flex justify-between items-start mb-1">
+                    <h3 className="font-semibold text-gray-800 text-sm truncate">{hotel.hotel_name}</h3>
+                    <span className="text-yellow-400 text-xs">⭐ {hotel.rating || 0}</span>
                   </div>
-                  <p className="text-[10px] sm:text-xs text-gray-600 truncate">{hotel.location}, {hotel.country}</p>
-                  
-                  <div className="flex items-center gap-1 mt-1">
-                    <span className="text-[10px] sm:text-xs font-semibold text-gray-700">{hotel.rating || 0}</span>
-                    <span className="text-[9px] text-gray-400">•</span>
-                    <span className="text-[8px] sm:text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full truncate max-w-[60px]">{hotel.category || 'Hotel'}</span>
+                  <p className="text-xs text-gray-600 truncate">{hotel.location}, {hotel.country}</p>
+
+                  <div className="flex items-center gap-1 mt-1.5">
+                    <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">{hotel.category || 'Hotel'}</span>
+                    <span className="text-[10px] text-gray-400">•</span>
+                    <span className="text-[10px] text-gray-500">{hotel.reviews || 0} reviews</span>
                   </div>
-                  
-                  <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-gray-100">
+
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
                     <div>
-                      <p className="text-[8px] text-gray-500">/night</p>
-                      <p className="text-xs sm:text-sm font-bold text-indigo-600">${hotel.price_per_night || 0}</p>
+                      <p className="text-[10px] text-gray-500">/night</p>
+                      <p className="text-sm font-bold text-indigo-600">${hotel.price_per_night || 0}</p>
                     </div>
                     <button
                       onClick={() => handleBookNow(hotel)}
-                      className="px-2 py-0.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-[9px] sm:text-[10px] font-medium rounded hover:shadow-lg transition"
+                      className="px-4 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-medium rounded-lg hover:shadow-lg transition"
                     >
-                      Book
+                      Book Now
                     </button>
                   </div>
                 </div>

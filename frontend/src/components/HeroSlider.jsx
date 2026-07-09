@@ -1,138 +1,130 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Star, MapPin } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-const HeroSlider = () => {
-  const slides = [
-    {
-      id: 1,
-      title: 'Discover Paradise in Maldives',
-      description: 'Overwater bungalows, crystal clear waters, and unforgettable sunsets.',
-      image: 'https://images.unsplash.com/photo-1514282401047-d79a71a590e8?w=1920&h=600&fit=crop',
-      destination: 'Maldives',
-      price: '$780',
-      rating: 4.9
-    },
-    {
-      id: 2,
-      title: 'Experience the Magic of Dubai',
-      description: 'From the Burj Khalifa to desert safaris, Dubai has it all.',
-      image: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1920&h=600&fit=crop',
-      destination: 'Dubai',
-      price: '$420',
-      rating: 4.8
-    },
-    {
-      id: 3,
-      title: 'Explore the Beauty of Bali',
-      description: 'Rice terraces, volcanic mountains, and pristine beaches.',
-      image: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=1920&h=600&fit=crop',
-      destination: 'Bali',
-      price: '$350',
-      rating: 4.7
-    },
-    {
-      id: 4,
-      title: 'Romance in Paris',
-      description: 'The City of Love awaits with its iconic landmarks and charming streets.',
-      image: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=1920&h=600&fit=crop',
-      destination: 'Paris',
-      price: '$520',
-      rating: 4.9
-    },
-  ];
-
-  const [currentSlide, setCurrentSlide] = useState(0);
+const HeroSlider = ({ destinations }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % destinations.length);
     }, 5000);
-    return () => clearInterval(interval);
-  }, [slides.length]);
+    return () => clearInterval(timer);
+  }, [destinations.length]);
 
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+  if (!destinations || destinations.length === 0) return null;
+
+  const current = destinations[currentIndex];
+
+  const handlePrev = () => {
+    setCurrentIndex((prev) => (prev === 0 ? destinations.length - 1 : prev - 1));
   };
 
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % slides.length);
+  const handleNext = () => {
+    setCurrentIndex((prev) => (prev + 1) % destinations.length);
   };
 
   return (
-    <div className="relative h-[600px] overflow-hidden">
-      {slides.map((slide, index) => (
-        <div
-          key={slide.id}
-          className={`absolute inset-0 transition-opacity duration-1000 ${
-            index === currentSlide ? 'opacity-100' : 'opacity-0'
-          }`}
-        >
-          <img
-            src={slide.image}
-            alt={slide.title}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent" />
-          <div className="absolute inset-0 flex items-center">
-            <div className="container">
-              <div className="max-w-2xl text-white">
-                <div className="flex items-center gap-2 text-sm text-yellow-400 mb-2">
-                  <Star className="w-4 h-4 fill-yellow-400" />
-                  <span>{slide.rating}</span>
-                  <span className="text-white/50">|</span>
-                  <MapPin className="w-4 h-4" />
-                  <span>{slide.destination}</span>
-                </div>
-                <h1 className="text-5xl md:text-6xl font-bold mb-4">{slide.title}</h1>
-                <p className="text-lg text-white/80 mb-6">{slide.description}</p>
-                <div className="flex items-center gap-4">
-                  <Link
-                    to={`/destinations`}
-                    className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    Explore Now
-                  </Link>
-                  <span className="text-2xl font-bold text-white">
-                    From {slide.price}
-                  </span>
-                </div>
-              </div>
+    <div className="relative h-[500px] md:h-[600px] rounded-2xl overflow-hidden shadow-2xl">
+      {/* Background */}
+      <div className={`w-full h-full bg-gradient-to-br ${getGradient(current.id)} relative`}>
+        <div className="absolute inset-0 bg-black/40"></div>
+        
+        {/* Content */}
+        <div className="relative z-10 h-full flex flex-col items-center justify-center text-white text-center px-4">
+          <span className="inline-block bg-white/20 backdrop-blur-sm px-4 py-1.5 rounded-full text-sm font-medium mb-4">
+            {current.category || 'Destination'}
+          </span>
+          
+          <h1 className="text-5xl md:text-7xl font-bold mb-4 animate-fade-in">
+            {current.name}
+          </h1>
+          
+          <p className="text-xl md:text-2xl text-white/90 mb-2 flex items-center gap-2">
+            <MapPin className="w-5 h-5" />
+            {current.country}
+          </p>
+          
+          <p className="text-sm text-white/80 max-w-2xl mb-6">
+            {current.description?.substring(0, 120)}...
+          </p>
+
+          <div className="flex items-center gap-6 mb-6">
+            <div className="flex items-center gap-1.5">
+              <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+              <span className="text-lg font-semibold">{current.rating || 0}</span>
+              <span className="text-white/60">({current.reviews || 0} reviews)</span>
+            </div>
+            <div className="text-white/60">|</div>
+            <div>
+              <span className="text-sm text-white/60">From</span>
+              <span className="text-2xl font-bold ml-1">${current.price_per_night || 0}</span>
+              <span className="text-sm text-white/60">/night</span>
             </div>
           </div>
+
+          <button
+            onClick={() => {
+              const bookingData = {
+                name: current.name,
+                location: current.country,
+                price: current.price_per_night,
+                type: 'Destination',
+                id: current.id
+              };
+              localStorage.setItem('bookingItem', JSON.stringify(bookingData));
+              navigate('/booking');
+            }}
+            className="px-8 py-3 bg-white text-indigo-600 font-semibold rounded-xl hover:shadow-xl hover:scale-105 transition-all duration-300"
+          >
+            Book This Destination
+          </button>
         </div>
-      ))}
+      </div>
 
       {/* Navigation Arrows */}
       <button
-        onClick={prevSlide}
-        className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white/20 hover:bg-white/30 rounded-full text-white transition-colors backdrop-blur-sm"
+        onClick={handlePrev}
+        className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-sm p-3 rounded-full hover:bg-white/30 transition"
       >
-        <ChevronLeft className="w-6 h-6" />
+        <ChevronLeft className="w-6 h-6 text-white" />
       </button>
       <button
-        onClick={nextSlide}
-        className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white/20 hover:bg-white/30 rounded-full text-white transition-colors backdrop-blur-sm"
+        onClick={handleNext}
+        className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-sm p-3 rounded-full hover:bg-white/30 transition"
       >
-        <ChevronRight className="w-6 h-6" />
+        <ChevronRight className="w-6 h-6 text-white" />
       </button>
 
       {/* Dots */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
-        {slides.map((_, index) => (
+        {destinations.map((_, index) => (
           <button
             key={index}
-            onClick={() => setCurrentSlide(index)}
-            className={`w-2 h-2 rounded-full transition-all ${
-              index === currentSlide
-                ? 'w-8 bg-white'
-                : 'bg-white/50 hover:bg-white/70'
+            onClick={() => setCurrentIndex(index)}
+            className={`transition-all duration-300 rounded-full ${
+              index === currentIndex
+                ? 'w-10 h-2 bg-white'
+                : 'w-2 h-2 bg-white/40 hover:bg-white/60'
             }`}
           />
         ))}
       </div>
     </div>
   );
+};
+
+const getGradient = (id) => {
+  const gradients = [
+    'from-blue-600 to-indigo-700',
+    'from-purple-600 to-pink-700',
+    'from-emerald-600 to-teal-700',
+    'from-orange-600 to-red-700',
+    'from-cyan-600 to-blue-700',
+    'from-rose-600 to-pink-700',
+  ];
+  return gradients[id % gradients.length] || gradients[0];
 };
 
 export default HeroSlider;

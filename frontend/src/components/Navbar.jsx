@@ -1,220 +1,176 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { Menu, X, User, LogOut, Home, Compass, Hotel, Plane, Package, Calendar, Heart, Settings, Info, Phone } from 'lucide-react';
 
 const Navbar = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const token = localStorage.getItem('accessToken');
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const isAdmin = user.role === 'admin';
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    const token = localStorage.getItem('accessToken');
+    const userData = JSON.parse(localStorage.getItem('user') || '{}');
+    setIsLoggedIn(!!token);
+    setUser(userData);
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('user');
+    localStorage.removeItem('isLoggedIn');
+    setIsLoggedIn(false);
+    setUser(null);
     navigate('/login');
   };
 
-  // Public links - shown to everyone
-  const publicLinks = [
-    { path: '/', label: 'Home' },
-    { path: '/about', label: 'About' },
-    { path: '/contact', label: 'Contact' },
-    { path: '/destinations', label: 'Destinations' },
-    { path: '/hotels', label: 'Hotels' },
-    { path: '/flights', label: 'Flights' },
-    { path: '/tours', label: 'Tours' },
+  const navItems = [
+    { path: '/', label: 'Home', icon: Home },
+    { path: '/destinations', label: 'Destinations', icon: Compass },
+    { path: '/hotels', label: 'Hotels', icon: Hotel },
+    { path: '/flights', label: 'Flights', icon: Plane },
+    { path: '/tours', label: 'Tours', icon: Package },
+    { path: '/bookings', label: 'Bookings', icon: Calendar },
+    { path: '/about', label: 'About Us', icon: Info },
+    { path: '/contact', label: 'Contact', icon: Phone },
   ];
-
-  // Admin only links
-  const adminLinks = [
-    { path: '/admin/dashboard', label: 'Admin Dashboard' },
-    { path: '/admin/destinations', label: 'Manage Destinations' },
-    { path: '/admin/hotels', label: 'Manage Hotels' },
-    { path: '/admin/flights', label: 'Manage Flights' },
-    { path: '/admin/tours', label: 'Manage Tours' },
-    { path: '/admin/bookings', label: 'Manage Bookings' },
-    { path: '/admin/users', label: 'Manage Users' },
-  ];
-
-  const isActive = (path) => location.pathname === path;
 
   return (
-    <nav className={`sticky top-0 z-50 transition-all duration-300 ${
-      scrolled ? 'bg-white shadow-lg border-b border-gray-200' : 'bg-white/95 backdrop-blur-sm border-b border-gray-100'
-    }`}>
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
-        <div className="flex justify-between items-center h-14 sm:h-16">
-          {/* Logo */}
+    <nav className="bg-white shadow-lg sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16">
+          {/* Logo - SKYROUTE TRAVEL */}
           <div className="flex items-center">
-            <Link to="/" className="flex items-center gap-1.5 sm:gap-2">
-              <span className="text-xl sm:text-2xl">✈️</span>
-              <span className="text-base sm:text-lg md:text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-                SkyRoute
+            <Link to="/" className="flex flex-col items-start">
+              <div className="flex items-center gap-1">
+                <span className="text-2xl font-bold tracking-wider text-gray-800">
+                  SKY<span className="text-indigo-600">ROUTE</span>
+                </span>
+                <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full ml-1">
+                  TRAVEL
+                </span>
+              </div>
+              <span className="text-[10px] tracking-[0.15em] text-gray-400 font-medium uppercase mt-[-2px]">
+                JOURNEYS BEYOND EXPECTATIONS
               </span>
             </Link>
           </div>
 
           {/* Desktop Menu */}
-          <div className="hidden md:flex items-center gap-0.5 lg:gap-1">
-            {/* Show public links for everyone */}
-            {publicLinks.map((link) => (
+          <div className="hidden md:flex items-center space-x-6">
+            {navItems.map((item) => (
               <Link
-                key={link.path}
-                to={link.path}
-                className={`px-2 lg:px-4 py-1.5 lg:py-2 text-xs lg:text-sm font-medium rounded-lg transition-colors ${
-                  isActive(link.path)
-                    ? 'text-blue-600 bg-blue-50'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }`}
+                key={item.path}
+                to={item.path}
+                className="text-gray-600 hover:text-indigo-600 transition font-medium text-sm flex items-center gap-1"
               >
-                {link.label}
+                <item.icon className="w-4 h-4" />
+                {item.label}
               </Link>
             ))}
-            
-            {/* Show admin links only for admin users */}
-            {isAdmin && token && (
-              <>
-                <span className="text-gray-300">|</span>
-                <Link
-                  to="/admin/dashboard"
-                  className={`px-2 lg:px-4 py-1.5 lg:py-2 text-xs lg:text-sm font-medium rounded-lg transition-colors ${
-                    isActive('/admin/dashboard')
-                      ? 'text-blue-600 bg-blue-50'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                  }`}
-                >
-                  Admin
-                </Link>
-              </>
-            )}
-          </div>
 
-          {/* Right side - Auth buttons */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            {token ? (
-              <>
-                <Link
-                  to="/dashboard"
-                  className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                >
-                  <span>👤 {user?.firstName || 'Dashboard'}</span>
-                </Link>
+            {isLoggedIn ? (
+              <div className="relative">
                 <button
-                  onClick={handleLogout}
-                  className="hidden md:flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors"
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className="flex items-center gap-2 bg-indigo-50 px-3 py-2 rounded-full hover:bg-indigo-100 transition"
                 >
-                  Logout
+                  <User className="w-5 h-5 text-indigo-600" />
+                  <span className="text-sm font-medium text-gray-700">{user?.first_name || user?.username || 'User'}</span>
                 </button>
-              </>
+                {dropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-1 border border-gray-100">
+                    <Link to="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 flex items-center gap-2">
+                      <User className="w-4 h-4" /> Profile
+                    </Link>
+                    <Link to="/bookings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 flex items-center gap-2">
+                      <Calendar className="w-4 h-4" /> My Bookings
+                    </Link>
+                    <Link to="/wishlist" className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 flex items-center gap-2">
+                      <Heart className="w-4 h-4" /> Wishlist
+                    </Link>
+                    <Link to="/settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 flex items-center gap-2">
+                      <Settings className="w-4 h-4" /> Settings
+                    </Link>
+                    <hr className="my-1" />
+                    <button
+                      onClick={handleLogout}
+                      className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                    >
+                      <LogOut className="w-4 h-4" /> Logout
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : (
-              <>
-                <Link
-                  to="/login"
-                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                >
-                  Sign In
+              <div className="flex items-center gap-3">
+                <Link to="/login" className="text-gray-600 hover:text-indigo-600 transition text-sm font-medium">
+                  Login
                 </Link>
                 <Link
                   to="/register"
-                  className="hidden sm:flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                  className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-medium rounded-full hover:shadow-lg transition"
                 >
-                  Get Started
+                  Sign Up
                 </Link>
-              </>
+              </div>
             )}
+          </div>
 
-            {/* Mobile menu button */}
+          {/* Mobile menu button */}
+          <div className="flex items-center md:hidden">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="md:hidden p-1.5 sm:p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+              className="text-gray-600 hover:text-indigo-600 focus:outline-none"
             >
-              {isOpen ? (
-                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              ) : (
-                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              )}
+              {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
         </div>
-
-        {/* Mobile Menu */}
-        {isOpen && (
-          <div className="md:hidden py-3 sm:py-4 border-t border-gray-200">
-            <div className="flex flex-col gap-0.5">
-              {/* Public links */}
-              {publicLinks.map((link) => (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  className={`px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
-                    isActive(link.path)
-                      ? 'text-blue-600 bg-blue-50'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                  }`}
-                  onClick={() => setIsOpen(false)}
-                >
-                  {link.label}
-                </Link>
-              ))}
-              
-              {/* Admin links in mobile menu */}
-              {isAdmin && token && (
-                <>
-                  <div className="h-px bg-gray-200 my-1" />
-                  <Link
-                    to="/admin/dashboard"
-                    className="px-3 py-2.5 text-sm font-medium text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    🔒 Admin Dashboard
-                  </Link>
-                </>
-              )}
-              
-              <div className="h-px bg-gray-200 my-1" />
-              {token ? (
-                <button
-                  onClick={() => { handleLogout(); setIsOpen(false); }}
-                  className="px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors text-left"
-                >
-                  Logout
-                </button>
-              ) : (
-                <>
-                  <Link
-                    to="/login"
-                    className="px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Sign In
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="px-3 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors text-center"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Get Started
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Mobile Menu */}
+      {isOpen && (
+        <div className="md:hidden bg-white border-t border-gray-100 py-2">
+          {navItems.map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              className="block px-4 py-2 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600 transition flex items-center gap-2"
+              onClick={() => setIsOpen(false)}
+            >
+              <item.icon className="w-4 h-4" />
+              {item.label}
+            </Link>
+          ))}
+          {isLoggedIn ? (
+            <>
+              <Link to="/profile" className="block px-4 py-2 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600 transition flex items-center gap-2">
+                <User className="w-4 h-4" /> Profile
+              </Link>
+              <button
+                onClick={() => { handleLogout(); setIsOpen(false); }}
+                className="block w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 transition flex items-center gap-2"
+              >
+                <LogOut className="w-4 h-4" /> Logout
+              </button>
+            </>
+          ) : (
+            <div className="px-4 py-2 flex flex-col gap-2">
+              <Link to="/login" className="text-center text-gray-600 hover:text-indigo-600 transition font-medium">
+                Login
+              </Link>
+              <Link
+                to="/register"
+                className="text-center px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full hover:shadow-lg transition"
+              >
+                Sign Up
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
     </nav>
   );
 };

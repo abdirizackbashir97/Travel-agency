@@ -38,7 +38,7 @@ const AdminDestinations = () => {
 
   const fetchDestinations = async () => {
     try {
-      const response = await fetch('http://localhost:5002/api/destinations');
+      const response = await fetch('http://localhost:5000/api/destinations');
       const data = await response.json();
       setDestinations(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -62,7 +62,7 @@ const AdminDestinations = () => {
       const token = localStorage.getItem('accessToken');
       console.log('Adding destination:', formData);
       
-      const response = await fetch('http://localhost:5002/api/destinations', {
+      const response = await fetch('http://localhost:5000/api/destinations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -113,7 +113,7 @@ const AdminDestinations = () => {
     
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch(`http://localhost:5002/api/destinations/${id}`, {
+      const response = await fetch(`http://localhost:5000/api/destinations/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`

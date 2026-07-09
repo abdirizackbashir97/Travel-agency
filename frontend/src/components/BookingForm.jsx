@@ -25,7 +25,7 @@ const BookingForm = ({ onBookingSuccess }) => {
 
   const fetchDestinations = async () => {
     try {
-      const response = await fetch('http://localhost:5002/api/destinations');
+      const response = await fetch('http://localhost:5000/api/destinations');
       const data = await response.json();
       setDestinations(data);
     } catch (error) {
@@ -64,7 +64,7 @@ const BookingForm = ({ onBookingSuccess }) => {
         total_price: totalPrice
       };
 
-      const response = await fetch('http://localhost:5002/api/bookings', {
+      const response = await fetch('http://localhost:5000/api/bookings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

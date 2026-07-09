@@ -36,7 +36,7 @@ const AdminFlights = () => {
 
   const fetchFlights = async () => {
     try {
-      const response = await fetch('http://localhost:5002/api/flights');
+      const response = await fetch('http://localhost:5000/api/flights');
       const data = await response.json();
       setFlights(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -71,7 +71,7 @@ const AdminFlights = () => {
 
       console.log('Submitting flight:', flightData);
 
-      const response = await fetch('http://localhost:5002/api/flights', {
+      const response = await fetch('http://localhost:5000/api/flights', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -115,7 +115,7 @@ const AdminFlights = () => {
     if (!confirm('Delete this flight?')) return;
     try {
       const token = localStorage.getItem('accessToken');
-      await fetch(`http://localhost:5002/api/flights/${id}`, {
+      await fetch(`http://localhost:5000/api/flights/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

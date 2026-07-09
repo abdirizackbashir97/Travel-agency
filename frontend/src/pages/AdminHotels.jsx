@@ -33,7 +33,7 @@ const AdminHotels = () => {
 
   const fetchHotels = async () => {
     try {
-      const response = await fetch('http://localhost:5002/api/hotels');
+      const response = await fetch('http://localhost:5000/api/hotels');
       const data = await response.json();
       setHotels(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -47,7 +47,7 @@ const AdminHotels = () => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch('http://localhost:5002/api/hotels', {
+      const response = await fetch('http://localhost:5000/api/hotels', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -86,7 +86,7 @@ const AdminHotels = () => {
     if (!confirm('Delete this hotel?')) return;
     try {
       const token = localStorage.getItem('accessToken');
-      await fetch(`http://localhost:5002/api/hotels/${id}`, {
+      await fetch(`http://localhost:5000/api/hotels/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
