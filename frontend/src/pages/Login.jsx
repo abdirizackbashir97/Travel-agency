@@ -1,97 +1,59 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-
-const API_BASE_URL = 'http://localhost:5000/api';
+import { useNavigate } from 'react-router-dom';
+import LoginHero from '../components/auth/LoginHero';
+import LoginForm from '../components/auth/LoginForm';
+import ForgotPasswordModal from '../components/auth/ForgotPasswordModal';
 
 const Login = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
-
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        // Store user data in localStorage
-        localStorage.setItem('user', JSON.stringify(data.user));
-        localStorage.setItem('token', data.token || 'dummy-token');
-        
-        // Redirect to dashboard
-        navigate('/dashboard');
-      } else {
-        setError(data.message || 'Login failed. Please try again.');
-      }
-    } catch (err) {
-      console.error('Login error:', err);
-      setError('Cannot connect to server. Please try again later.');
+      // Simulate login – replace with your actual API call
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // On success, reset form fields
+      setEmail('');
+      setPassword('');
+      setRememberMe(false);
+      navigate('/');
+    } catch (error) {
+      console.error('Login error:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to your account
-          </h2>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <div className="text-sm text-red-700">{error}</div>
-            </div>
-          )}
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <input
-                type="email"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Email Address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div>
-              <input
-                type="password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-          </div>
+  const handleForgotPassword = (email) => {
+    console.log('Reset password for:', email);
+    setIsForgotPasswordOpen(false);
+  };
 
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-            >
-              {loading ? 'Signing in...' : 'Sign In'}
-            </button>
-          </div>
-        </form>
-      </div>
+  return (
+    <div className="flex min-h-screen bg-white">
+      <LoginHero />
+      <LoginForm
+        email={email}
+        setEmail={setEmail}
+        password={password}
+        setPassword={setPassword}
+        rememberMe={rememberMe}
+        setRememberMe={setRememberMe}
+        handleSubmit={handleSubmit}
+        loading={loading}
+        openForgotPassword={() => setIsForgotPasswordOpen(true)}
+      />
+      <ForgotPasswordModal
+        isOpen={isForgotPasswordOpen}
+        onClose={() => setIsForgotPasswordOpen(false)}
+        onSend={handleForgotPassword}
+      />
     </div>
   );
 };
