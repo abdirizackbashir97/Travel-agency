@@ -151,3 +151,15 @@
   animation: slideDown 0.3s ease-out forwards;
 }
 
+
+/* Hide public navbar on admin routes */
+body:has(.admin-layout) .navbar-public {
+  display: none !important;
+}
+
+
+/* HIDE PUBLIC NAVBAR ON ADMIN ROUTES */
+body:has(.admin-layout) .public-navbar {
+  display: none !important;
+}
+

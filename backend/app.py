@@ -12,6 +12,7 @@ from routes.destination_routes import register_destination_routes
 from routes.hotel_routes import register_hotel_routes
 from routes.flight_routes import register_flight_routes
 from routes.tour_routes import register_tour_routes
+from routes.review_routes import register_review_routes
 from routes.booking_routes import register_booking_routes
 
 load_dotenv()
@@ -42,6 +43,7 @@ register_flight_routes(app)
 
 # Register tour routes
 register_tour_routes(app)
+register_review_routes(app)
 
 # Register booking routes
 register_booking_routes(app)

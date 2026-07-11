@@ -12,9 +12,9 @@ const SignupHero = () => {
       />
       <div className="absolute inset-0 bg-gradient-to-r from-blue-950/70 via-blue-900/40 to-transparent" />
       <div className="relative z-10 flex flex-col justify-between p-12 lg:p-16 h-full w-full">
+        {/* Logo removed */}
         <div className="flex items-center gap-2">
-          <span className="text-2xl font-bold tracking-wider text-white">SKYROUTE</span>
-          <span className="text-sm font-semibold text-blue-300 bg-blue-800/50 px-2 py-0.5 rounded-full">TRAVEL</span>
+          {/* Logo removed, just a placeholder or nothing */}
         </div>
         <div className="space-y-6">
           <h1 className="text-4xl lg:text-5xl font-bold text-white leading-tight">

@@ -18,11 +18,14 @@ const Login = () => {
     try {
       // Simulate login – replace with your actual API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      // On success, reset form fields
+      
+      // Reset form fields
       setEmail('');
       setPassword('');
       setRememberMe(false);
-      navigate('/');
+
+      // Redirect to admin dashboard after successful login
+      navigate('/admin');
     } catch (error) {
       console.error('Login error:', error);
     } finally {

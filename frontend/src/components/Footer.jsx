@@ -1,76 +1,53 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FaTwitter, FaFacebook, FaInstagram, FaYoutube, FaHeart } from 'react-icons/fa';
+import { FaFacebook, FaTwitter, FaInstagram, FaYoutube } from 'react-icons/fa';
+import logo from '../assets/logo/logo.png';
 
 const Footer = () => {
-  const currentYear = new Date().getFullYear();
-
   return (
-    <footer className="border-t border-gray-200 bg-white">
-      <div className="container py-12">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
-          <div className="md:col-span-2">
-            <Link to="/" className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">TA</span>
-              </div>
-              <span className="text-xl font-bold text-gray-900">TravelAgency</span>
-            </Link>
-            <p className="text-sm text-gray-500 max-w-sm">
-              Discover the world with curated travel experiences. Book flights, hotels, and tours with confidence.
-            </p>
-            <div className="flex gap-3 mt-4">
-              <a href="#" className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
-                <FaTwitter className="w-5 h-5" />
-              </a>
-              <a href="#" className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
-                <FaFacebook className="w-5 h-5" />
-              </a>
-              <a href="#" className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
-                <FaInstagram className="w-5 h-5" />
-              </a>
-              <a href="#" className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
-                <FaYoutube className="w-5 h-5" />
-              </a>
+    <footer className="bg-white border-t border-gray-200 py-8">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <img src={logo} alt="SkyRoute" className="h-8 w-auto" />
+              <h4 className="font-bold text-lg text-gray-800">SkyRoute</h4>
+            </div>
+            <p className="text-gray-600 text-sm">Travel the world with us</p>
+            <div className="flex gap-4 mt-4">
+              <a href="#" className="text-gray-500 hover:text-blue-600 transition"><FaFacebook /></a>
+              <a href="#" className="text-gray-500 hover:text-sky-600 transition"><FaTwitter /></a>
+              <a href="#" className="text-gray-500 hover:text-pink-600 transition"><FaInstagram /></a>
+              <a href="#" className="text-gray-500 hover:text-red-600 transition"><FaYoutube /></a>
             </div>
           </div>
-
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-4">Company</h3>
-            <ul className="space-y-2">
-              <li><Link to="/about" className="text-sm text-gray-500 hover:text-gray-700 transition-colors">About Us</Link></li>
-              <li><Link to="/contact" className="text-sm text-gray-500 hover:text-gray-700 transition-colors">Contact</Link></li>
-              <li><a href="#" className="text-sm text-gray-500 hover:text-gray-700 transition-colors">Careers</a></li>
-              <li><a href="#" className="text-sm text-gray-500 hover:text-gray-700 transition-colors">Blog</a></li>
+            <h5 className="font-semibold mb-3 text-gray-800">Quick Links</h5>
+            <ul className="space-y-2 text-sm text-gray-600">
+              <li><Link to="/about" className="hover:text-blue-600 transition">About Us</Link></li>
+              <li><Link to="/contact" className="hover:text-blue-600 transition">Contact</Link></li>
+              <li><Link to="/destinations" className="hover:text-blue-600 transition">Destinations</Link></li>
             </ul>
           </div>
-
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-4">Support</h3>
-            <ul className="space-y-2">
-              <li><a href="#" className="text-sm text-gray-500 hover:text-gray-700 transition-colors">Help Center</a></li>
-              <li><a href="#" className="text-sm text-gray-500 hover:text-gray-700 transition-colors">FAQ</a></li>
-              <li><a href="#" className="text-sm text-gray-500 hover:text-gray-700 transition-colors">Privacy Policy</a></li>
-              <li><a href="#" className="text-sm text-gray-500 hover:text-gray-700 transition-colors">Terms of Service</a></li>
+            <h5 className="font-semibold mb-3 text-gray-800">Support</h5>
+            <ul className="space-y-2 text-sm text-gray-600">
+              <li><a href="#" className="hover:text-blue-600 transition">Help Center</a></li>
+              <li><a href="#" className="hover:text-blue-600 transition">Privacy Policy</a></li>
+              <li><a href="#" className="hover:text-blue-600 transition">Terms of Service</a></li>
             </ul>
           </div>
-
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-4">Top Destinations</h3>
-            <ul className="space-y-2">
-              <li><a href="#" className="text-sm text-gray-500 hover:text-gray-700 transition-colors">Paris, France</a></li>
-              <li><a href="#" className="text-sm text-gray-500 hover:text-gray-700 transition-colors">Tokyo, Japan</a></li>
-              <li><a href="#" className="text-sm text-gray-500 hover:text-gray-700 transition-colors">New York, USA</a></li>
-              <li><a href="#" className="text-sm text-gray-500 hover:text-gray-700 transition-colors">Dubai, UAE</a></li>
+            <h5 className="font-semibold mb-3 text-gray-800">Contact</h5>
+            <ul className="space-y-2 text-sm text-gray-600">
+              <li>📞 +1234 567 8900</li>
+              <li>✉️ info@skyroute.com</li>
+              <li>📍 Garissa, Kenya</li>
             </ul>
           </div>
         </div>
-
-        <div className="mt-12 pt-8 border-t border-gray-200 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-gray-400">© {currentYear} TravelAgency. All rights reserved.</p>
-          <p className="text-sm text-gray-400 flex items-center gap-1">
-            Made with <FaHeart className="w-4 h-4 text-red-500" /> for travelers
-          </p>
+        <div className="border-t border-gray-200 mt-8 pt-4 text-center text-sm text-gray-500">
+          © 2026 SkyRoute Travel. All rights reserved.
         </div>
       </div>
     </footer>

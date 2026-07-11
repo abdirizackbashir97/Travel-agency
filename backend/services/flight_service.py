@@ -1,62 +1,112 @@
 import sqlite3
-from datetime import datetime
 from config.database import get_db_connection, dict_factory
 
 class FlightService:
     def __init__(self):
-        pass
-    
+        self.create_flight_table()
+
+    def create_flight_table(self):
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(flights)")
+        columns = [row[1] for row in cursor.fetchall()]
+        if 'is_active' not in columns:
+            cursor.execute("ALTER TABLE flights ADD COLUMN is_active INTEGER DEFAULT 1")
+            conn.commit()
+        conn.close()
+
     def get_all_flights(self):
-        """Get all flights"""
         conn = get_db_connection()
         conn.row_factory = dict_factory
         cursor = conn.cursor()
-        
         cursor.execute('''
-            SELECT id, airline, flight_number, departure_airport, departure_city, 
-                   departure_time, arrival_airport, arrival_city, arrival_time, 
-                   duration, flight_type, baggage_allowance, travel_date, price
-            FROM flights 
+            SELECT id, airline, flight_number, departure_airport, departure_city,
+                   departure_time, arrival_airport, arrival_city, arrival_time,
+                   duration, flight_type, baggage_allowance, travel_date, price,
+                   is_active
+            FROM flights
             ORDER BY travel_date ASC, departure_time ASC
         ''')
-        flights = cursor.fetchall()
-        conn.close()
-        
-        return flights
-    
+        return cursor.fetchall()
+
     def get_flight_by_id(self, flight_id):
-        """Get a flight by ID"""
         conn = get_db_connection()
         conn.row_factory = dict_factory
         cursor = conn.cursor()
-        
         cursor.execute('''
-            SELECT id, airline, flight_number, departure_airport, departure_city, 
-                   departure_time, arrival_airport, arrival_city, arrival_time, 
-                   duration, flight_type, baggage_allowance, travel_date, price
-            FROM flights 
-            WHERE id = ?
+            SELECT id, airline, flight_number, departure_airport, departure_city,
+                   departure_time, arrival_airport, arrival_city, arrival_time,
+                   duration, flight_type, baggage_allowance, travel_date, price,
+                   is_active
+            FROM flights WHERE id = ?
         ''', (flight_id,))
-        flight = cursor.fetchone()
+        return cursor.fetchone()
+
+    def create_flight(self, data):
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO flights (
+                airline, flight_number, departure_airport, departure_city,
+                departure_time, arrival_airport, arrival_city, arrival_time,
+                duration, flight_type, baggage_allowance, travel_date, price,
+                is_active
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            data['airline'], data['flight_number'], data['departure_airport'],
+            data['departure_city'], data['departure_time'], data['arrival_airport'],
+            data['arrival_city'], data['arrival_time'], data['duration'],
+            data['flight_type'], data['baggage_allowance'], data['travel_date'],
+            data['price'], data.get('is_active', 1)
+        ))
+        flight_id = cursor.lastrowid
+        conn.commit()
         conn.close()
-        
-        return flight
-    
+        return self.get_flight_by_id(flight_id)
+
+    def update_flight(self, flight_id, data):
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        updates = []
+        values = []
+        allowed = ['airline', 'flight_number', 'departure_airport', 'departure_city',
+                   'departure_time', 'arrival_airport', 'arrival_city', 'arrival_time',
+                   'duration', 'flight_type', 'baggage_allowance', 'travel_date', 'price',
+                   'is_active']
+        for field in allowed:
+            if field in data:
+                updates.append(f"{field} = ?")
+                values.append(data[field])
+        if not updates:
+            conn.close()
+            return {'success': False, 'message': 'No fields to update'}
+        values.append(flight_id)
+        query = f"UPDATE flights SET {', '.join(updates)} WHERE id = ?"
+        cursor.execute(query, values)
+        conn.commit()
+        conn.close()
+        return {'success': True, 'message': 'Flight updated successfully'}
+
+    def delete_flight(self, flight_id):
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM flights WHERE id = ?", (flight_id,))
+        conn.commit()
+        conn.close()
+        return {'success': True, 'message': 'Flight deleted successfully'}
+
     def search_flights(self, origin=None, destination=None, date=None):
-        """Search flights by origin, destination, and date"""
         conn = get_db_connection()
         conn.row_factory = dict_factory
         cursor = conn.cursor()
-        
         query = '''
-            SELECT id, airline, flight_number, departure_airport, departure_city, 
-                   departure_time, arrival_airport, arrival_city, arrival_time, 
-                   duration, flight_type, baggage_allowance, travel_date, price
-            FROM flights 
-            WHERE 1=1
+            SELECT id, airline, flight_number, departure_airport, departure_city,
+                   departure_time, arrival_airport, arrival_city, arrival_time,
+                   duration, flight_type, baggage_allowance, travel_date, price,
+                   is_active
+            FROM flights WHERE 1=1
         '''
         params = []
-        
         if origin:
             query += " AND (departure_airport = ? OR departure_city = ?)"
             params.extend([origin, origin])
@@ -66,87 +116,6 @@ class FlightService:
         if date:
             query += " AND travel_date = ?"
             params.append(date)
-        
         query += " ORDER BY price ASC"
-        
         cursor.execute(query, params)
-        flights = cursor.fetchall()
-        conn.close()
-        
-        return flights
-    
-    def get_flights_by_origin(self, origin):
-        """Get flights by origin city or airport"""
-        conn = get_db_connection()
-        conn.row_factory = dict_factory
-        cursor = conn.cursor()
-        
-        cursor.execute('''
-            SELECT id, airline, flight_number, departure_airport, departure_city, 
-                   departure_time, arrival_airport, arrival_city, arrival_time, 
-                   duration, flight_type, baggage_allowance, travel_date, price
-            FROM flights 
-            WHERE departure_airport = ? OR departure_city = ?
-            ORDER BY price ASC
-        ''', (origin, origin))
-        flights = cursor.fetchall()
-        conn.close()
-        
-        return flights
-    
-    def get_flights_by_destination(self, destination):
-        """Get flights by destination city or airport"""
-        conn = get_db_connection()
-        conn.row_factory = dict_factory
-        cursor = conn.cursor()
-        
-        cursor.execute('''
-            SELECT id, airline, flight_number, departure_airport, departure_city, 
-                   departure_time, arrival_airport, arrival_city, arrival_time, 
-                   duration, flight_type, baggage_allowance, travel_date, price
-            FROM flights 
-            WHERE arrival_airport = ? OR arrival_city = ?
-            ORDER BY price ASC
-        ''', (destination, destination))
-        flights = cursor.fetchall()
-        conn.close()
-        
-        return flights
-    
-    def get_flights_by_date(self, date):
-        """Get flights by travel date"""
-        conn = get_db_connection()
-        conn.row_factory = dict_factory
-        cursor = conn.cursor()
-        
-        cursor.execute('''
-            SELECT id, airline, flight_number, departure_airport, departure_city, 
-                   departure_time, arrival_airport, arrival_city, arrival_time, 
-                   duration, flight_type, baggage_allowance, travel_date, price
-            FROM flights 
-            WHERE travel_date = ?
-            ORDER BY departure_time ASC
-        ''', (date,))
-        flights = cursor.fetchall()
-        conn.close()
-        
-        return flights
-    
-    def get_flights_by_type(self, flight_type):
-        """Get flights by type (Domestic, International, etc.)"""
-        conn = get_db_connection()
-        conn.row_factory = dict_factory
-        cursor = conn.cursor()
-        
-        cursor.execute('''
-            SELECT id, airline, flight_number, departure_airport, departure_city, 
-                   departure_time, arrival_airport, arrival_city, arrival_time, 
-                   duration, flight_type, baggage_allowance, travel_date, price
-            FROM flights 
-            WHERE flight_type = ?
-            ORDER BY price ASC
-        ''', (flight_type,))
-        flights = cursor.fetchall()
-        conn.close()
-        
-        return flights
+        return cursor.fetchall()

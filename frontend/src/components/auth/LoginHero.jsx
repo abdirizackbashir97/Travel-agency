@@ -1,7 +1,8 @@
 import React from 'react';
+import logo from '../../assets/logo/logo.png';
 
 const LoginHero = () => {
-  const heroImage = '/images/air/image.png'; // replace with your image
+  const heroImage = '/images/air/image.png';
 
   return (
     <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden bg-gradient-to-br from-blue-900/80 to-blue-600/30">
@@ -12,6 +13,9 @@ const LoginHero = () => {
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
       <div className="relative z-10 flex flex-col justify-end p-12 pb-16 text-white h-full">
+        <div className="mb-8">
+          <img src={logo} alt="SkyRoute" className="h-12 w-auto" />
+        </div>
         <div className="space-y-2">
           <h1 className="text-4xl font-bold leading-tight">Welcome Back</h1>
           <p className="text-lg text-white/80 max-w-sm">
