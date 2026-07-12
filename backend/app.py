@@ -14,6 +14,7 @@ from routes.flight_routes import register_flight_routes
 from routes.tour_routes import register_tour_routes
 from routes.review_routes import register_review_routes
 from routes.booking_routes import register_booking_routes
+from routes.notification_routes import register_notification_routes
 
 load_dotenv()
 
@@ -43,10 +44,13 @@ register_flight_routes(app)
 
 # Register tour routes
 register_tour_routes(app)
+
+# Register review routes
 register_review_routes(app)
 
 # Register booking routes
 register_booking_routes(app)
+register_notification_routes(app)
 
 @app.route('/health', methods=['GET'])
 def health():
@@ -126,28 +130,10 @@ def handle_callback():
 @app.route('/api/payments/transactions', methods=['GET'])
 def get_transactions():
     try:
-        conn = get_db_connection()
-        conn.row_factory = dict_factory
-        cursor = conn.cursor()
-        cursor.execute('''
-            SELECT * FROM transactions 
-            ORDER BY created_at DESC 
-            LIMIT 100
-        ''')
-        transactions = cursor.fetchall()
-        conn.close()
-        
-        return jsonify({
-            'success': True,
-            'transactions': transactions
-        })
-        
+        transactions = mpesa_service.get_transactions()
+        return jsonify({'success': True, 'transactions': transactions})
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': 'Failed to fetch transactions',
-            'error': str(e)
-        }), 500
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 @app.route('/api/payments/transaction/<int:id>', methods=['GET'])
 def get_transaction_by_id(id):

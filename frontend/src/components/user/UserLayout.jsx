@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import Sidebar from './Sidebar';
-import AdminTopNavbar from './AdminTopNavbar';
+import UserSidebar from './UserSidebar';
+import UserNavbar from './UserNavbar';
 
-const AdminLayout = ({ children }) => {
+const UserLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
@@ -19,14 +19,14 @@ const AdminLayout = ({ children }) => {
   }, []);
 
   return (
-    <div className="admin-layout flex h-screen overflow-hidden bg-gray-50">
-      <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
+    <div className="flex h-screen overflow-hidden bg-gray-50">
+      <UserSidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
       <div
         className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
           sidebarOpen ? 'lg:ml-60' : 'ml-16'
         }`}
       >
-        <AdminTopNavbar toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+        <UserNavbar toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
         <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50/50">
           {children}
         </main>
@@ -35,4 +35,4 @@ const AdminLayout = ({ children }) => {
   );
 };
 
-export default AdminLayout;
+export default UserLayout;

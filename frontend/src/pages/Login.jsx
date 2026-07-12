@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import toast, { Toaster } from 'react-hot-toast';
 import LoginHero from '../components/auth/LoginHero';
 import LoginForm from '../components/auth/LoginForm';
 import ForgotPasswordModal from '../components/auth/ForgotPasswordModal';
+
+const API_BASE = 'http://localhost:5000/api';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -16,18 +19,30 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      // Simulate login – replace with your actual API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      // Reset form fields
-      setEmail('');
-      setPassword('');
-      setRememberMe(false);
-
-      // Redirect to admin dashboard after successful login
-      navigate('/admin');
+      const res = await fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        localStorage.setItem('accessToken', data.access_token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('isLoggedIn', 'true');
+        // Redirect based on role
+        const userRole = data.user?.role || 'user';
+        if (userRole === 'admin') {
+          navigate('/admin/dashboard');
+        } else {
+          navigate('/dashboard');
+        }
+        toast.success('Login successful!');
+      } else {
+        toast.error(data.message || 'Invalid credentials');
+      }
     } catch (error) {
       console.error('Login error:', error);
+      toast.error('Login failed');
     } finally {
       setLoading(false);
     }
@@ -39,25 +54,28 @@ const Login = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-white">
-      <LoginHero />
-      <LoginForm
-        email={email}
-        setEmail={setEmail}
-        password={password}
-        setPassword={setPassword}
-        rememberMe={rememberMe}
-        setRememberMe={setRememberMe}
-        handleSubmit={handleSubmit}
-        loading={loading}
-        openForgotPassword={() => setIsForgotPasswordOpen(true)}
-      />
-      <ForgotPasswordModal
-        isOpen={isForgotPasswordOpen}
-        onClose={() => setIsForgotPasswordOpen(false)}
-        onSend={handleForgotPassword}
-      />
-    </div>
+    <>
+      <Toaster position="top-right" />
+      <div className="flex min-h-screen bg-white">
+        <LoginHero />
+        <LoginForm
+          email={email}
+          setEmail={setEmail}
+          password={password}
+          setPassword={setPassword}
+          rememberMe={rememberMe}
+          setRememberMe={setRememberMe}
+          handleSubmit={handleSubmit}
+          loading={loading}
+          openForgotPassword={() => setIsForgotPasswordOpen(true)}
+        />
+        <ForgotPasswordModal
+          isOpen={isForgotPasswordOpen}
+          onClose={() => setIsForgotPasswordOpen(false)}
+          onSend={handleForgotPassword}
+        />
+      </div>
+    </>
   );
 };
 

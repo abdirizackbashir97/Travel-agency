@@ -163,3 +163,4 @@ body:has(.admin-layout) .public-navbar {
   display: none !important;
 }
 
+body:has(.admin-layout) .public-navbar { display: none !important; }

@@ -25,25 +25,24 @@ import AdminPayments from './pages/AdminPayments';
 import AdminReviews from './pages/AdminReviews';
 import AdminReports from './pages/AdminReports';
 import AdminSettings from './pages/AdminSettings';
+import AdminProfile from './pages/AdminProfile';
+import UserDashboard from './pages/UserDashboard';
+import UserFlights from './pages/UserFlights';
+import UserHotels from './pages/UserHotels';
+import UserTours from './pages/UserTours';
+import UserExplore from './pages/UserExplore';
+import UserTickets from './pages/UserTickets';
 
-// Layout component that conditionally renders public Navbar and Footer
-const Layout = ({ children }) => {
+function AppContent() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
+  const isDashboardRoute = location.pathname.startsWith('/dashboard');
+  const hidePublicNavbar = isAdminRoute || isDashboardRoute;
 
   return (
     <div className="flex flex-col min-h-screen">
-      {!isAdminRoute && <Navbar />}
-      <main className="flex-1">{children}</main>
-      {!isAdminRoute && <Footer />}
-    </div>
-  );
-};
-
-function App() {
-  return (
-    <Router>
-      <Layout>
+      {!hidePublicNavbar && <Navbar />}
+      <main className="flex-1">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/destinations" element={<Destinations />} />
@@ -56,6 +55,12 @@ function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/bookings" element={<Bookings />} />
           <Route path="/booking" element={<Booking />} />
+          <Route path="/dashboard" element={<UserDashboard />} />
+          <Route path="/dashboard/flights" element={<UserFlights />} />
+          <Route path="/dashboard/hotels" element={<UserHotels />} />
+          <Route path="/dashboard/tours" element={<UserTours />} />
+          <Route path="/dashboard/explore" element={<UserExplore />} />
+          <Route path="/dashboard/tickets" element={<UserTickets />} />
           <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="/admin/dashboard" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
           <Route path="/admin/users" element={<AdminLayout><AdminUsers /></AdminLayout>} />
@@ -68,9 +73,19 @@ function App() {
           <Route path="/admin/reviews" element={<AdminLayout><AdminReviews /></AdminLayout>} />
           <Route path="/admin/reports" element={<AdminLayout><AdminReports /></AdminLayout>} />
           <Route path="/admin/settings" element={<AdminLayout><AdminSettings /></AdminLayout>} />
+          <Route path="/admin/profile" element={<AdminLayout><AdminProfile /></AdminLayout>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </Layout>
+      </main>
+      {!hidePublicNavbar && <Footer />}
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AppContent />
     </Router>
   );
 }

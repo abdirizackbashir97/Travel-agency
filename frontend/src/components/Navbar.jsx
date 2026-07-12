@@ -11,10 +11,11 @@ const Navbar = () => {
   const [user, setUser] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  // If on admin route, return null (just in case)
+  // --- SAFETY CHECK: Hide on admin routes ---
   if (location.pathname.startsWith('/admin')) {
     return null;
   }
+  // ---------------------------------------------
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
@@ -42,7 +43,7 @@ const Navbar = () => {
   ];
 
   return (
-    <nav className="public-navbar bg-white shadow-lg sticky top-0 z-50">
+    <nav className="public-navbar public-navbar bg-white shadow-lg sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
