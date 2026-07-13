@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from flask_mail import Mail, Message
 from dotenv import load_dotenv
 import os
 import json
@@ -20,6 +21,16 @@ load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
+
+# Email configuration
+app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
+app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
+app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'True') == 'True'
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER')
+
+mail = Mail(app)
 
 # Initialize database
 init_db()
@@ -50,6 +61,8 @@ register_review_routes(app)
 
 # Register booking routes
 register_booking_routes(app)
+
+# Register notification routes
 register_notification_routes(app)
 
 @app.route('/health', methods=['GET'])

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X, User, LogOut, Home, Compass, Hotel, Plane, Package, Calendar, Heart, Settings } from 'lucide-react';
+import { Menu, X, User, LogOut, Home, Compass, Hotel, Plane, Package, Info, Phone } from 'lucide-react';
 import logo from '../assets/logo/logo.png';
 
 const Navbar = () => {
@@ -11,11 +11,10 @@ const Navbar = () => {
   const [user, setUser] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  // --- SAFETY CHECK: Hide on admin routes ---
-  if (location.pathname.startsWith('/admin')) {
+  // Hide on admin or dashboard routes
+  if (location.pathname.startsWith('/admin') || location.pathname.startsWith('/dashboard')) {
     return null;
   }
-  // ---------------------------------------------
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
@@ -39,11 +38,12 @@ const Navbar = () => {
     { path: '/hotels', label: 'Hotels', icon: Hotel },
     { path: '/flights', label: 'Flights', icon: Plane },
     { path: '/tours', label: 'Tours', icon: Package },
-    { path: '/bookings', label: 'Bookings', icon: Calendar },
+    { path: '/about', label: 'About', icon: Info },
+    { path: '/contact', label: 'Contact', icon: Phone },
   ];
 
   return (
-    <nav className="public-navbar public-navbar bg-white shadow-lg sticky top-0 z-50">
+    <nav className="bg-white shadow-lg sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
@@ -75,17 +75,14 @@ const Navbar = () => {
                 </button>
                 {dropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-1 border border-gray-100">
+                    <Link to="/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 flex items-center gap-2">
+                      <User className="w-4 h-4" /> Dashboard
+                    </Link>
                     <Link to="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 flex items-center gap-2">
                       <User className="w-4 h-4" /> Profile
                     </Link>
                     <Link to="/bookings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 flex items-center gap-2">
-                      <Calendar className="w-4 h-4" /> My Bookings
-                    </Link>
-                    <Link to="/wishlist" className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 flex items-center gap-2">
-                      <Heart className="w-4 h-4" /> Wishlist
-                    </Link>
-                    <Link to="/settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 flex items-center gap-2">
-                      <Settings className="w-4 h-4" /> Settings
+                      <Package className="w-4 h-4" /> My Bookings
                     </Link>
                     <hr className="my-1" />
                     <button
@@ -138,8 +135,8 @@ const Navbar = () => {
           ))}
           {isLoggedIn ? (
             <>
-              <Link to="/profile" className="block px-4 py-2 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600 transition flex items-center gap-2">
-                <User className="w-4 h-4" /> Profile
+              <Link to="/dashboard" className="block px-4 py-2 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600 transition flex items-center gap-2">
+                <User className="w-4 h-4" /> Dashboard
               </Link>
               <button
                 onClick={() => { handleLogout(); setIsOpen(false); }}

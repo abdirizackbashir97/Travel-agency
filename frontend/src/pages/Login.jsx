@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 import LoginHero from '../components/auth/LoginHero';
 import LoginForm from '../components/auth/LoginForm';
@@ -19,30 +19,32 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     try {
+      const payload = { email, password };
+      console.log('🚀 Sending login request:', payload);
       const res = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
+      console.log('✅ Login response:', data);
       if (data.success) {
         localStorage.setItem('accessToken', data.access_token);
         localStorage.setItem('user', JSON.stringify(data.user));
         localStorage.setItem('isLoggedIn', 'true');
-        // Redirect based on role
         const userRole = data.user?.role || 'user';
+        toast.success('Login successful!');
         if (userRole === 'admin') {
           navigate('/admin/dashboard');
         } else {
           navigate('/dashboard');
         }
-        toast.success('Login successful!');
       } else {
         toast.error(data.message || 'Invalid credentials');
       }
     } catch (error) {
-      console.error('Login error:', error);
-      toast.error('Login failed');
+      console.error('❌ Login error:', error);
+      toast.error('Login failed – check console');
     } finally {
       setLoading(false);
     }
