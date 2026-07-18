@@ -11,37 +11,45 @@ import About from './pages/About';
 import Contact from './pages/Contact';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
-import Bookings from './pages/Bookings';
-import Booking from './pages/Booking';
+import DashboardLayout from './components/dashboard/DashboardLayout';
+import UserDashboard from './pages/UserDashboard';
+import UserBookings from './pages/UserBookings';
+import UserFlights from './pages/UserFlights';
+import UserHotels from './pages/UserHotels';
+import UserTours from './pages/UserTours';
+import UserPayments from './pages/UserPayments';
+import UserNotifications from './pages/UserNotifications';
+import UserReviews from './pages/UserReviews';
+import UserProfile from './pages/UserProfile';
+import UserSettings from './pages/UserSettings';
+import UserHelp from './pages/UserHelp';
 import AdminLayout from './components/dashboard/AdminLayout';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminBookings from './pages/AdminBookings';
+import AdminReviews from './pages/AdminReviews';
 import AdminUsers from './pages/AdminUsers';
 import AdminFlights from './pages/AdminFlights';
 import AdminHotels from './pages/AdminHotels';
 import AdminDestinations from './pages/AdminDestinations';
 import AdminTours from './pages/AdminTours';
-import AdminBookings from './pages/AdminBookings';
 import AdminPayments from './pages/AdminPayments';
-import AdminReviews from './pages/AdminReviews';
 import AdminReports from './pages/AdminReports';
 import AdminSettings from './pages/AdminSettings';
 import AdminProfile from './pages/AdminProfile';
-import UserDashboard from './pages/UserDashboard';
-import UserFlights from './pages/UserFlights';
-import UserHotels from './pages/UserHotels';
-import UserTours from './pages/UserTours';
-import UserExplore from './pages/UserExplore';
-import UserTickets from './pages/UserTickets';
+import AdminNotifications from './pages/AdminNotifications';
+import AdminHelp from './pages/AdminHelp';
 
 function AppContent() {
   const location = useLocation();
-  const isAdminRoute = location.pathname.startsWith('/admin');
   const isDashboardRoute = location.pathname.startsWith('/dashboard');
-  const hidePublicNavbar = isAdminRoute || isDashboardRoute;
+  const isAdminRoute = location.pathname.startsWith('/admin');
+  const isAuthRoute = location.pathname === '/login' || location.pathname === '/signup';
+  
+  const showLayout = !isDashboardRoute && !isAdminRoute && !isAuthRoute;
 
   return (
     <div className="flex flex-col min-h-screen">
-      {!hidePublicNavbar && <Navbar />}
+      {showLayout && <Navbar />}
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<Home />} />
@@ -53,31 +61,44 @@ function AppContent() {
           <Route path="/contact" element={<Contact />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
-          <Route path="/bookings" element={<Bookings />} />
-          <Route path="/booking" element={<Booking />} />
-          <Route path="/dashboard" element={<UserDashboard />} />
-          <Route path="/dashboard/flights" element={<UserFlights />} />
-          <Route path="/dashboard/hotels" element={<UserHotels />} />
-          <Route path="/dashboard/tours" element={<UserTours />} />
-          <Route path="/dashboard/explore" element={<UserExplore />} />
-          <Route path="/dashboard/tickets" element={<UserTickets />} />
-          <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-          <Route path="/admin/dashboard" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
-          <Route path="/admin/users" element={<AdminLayout><AdminUsers /></AdminLayout>} />
-          <Route path="/admin/flights" element={<AdminLayout><AdminFlights /></AdminLayout>} />
-          <Route path="/admin/hotels" element={<AdminLayout><AdminHotels /></AdminLayout>} />
-          <Route path="/admin/destinations" element={<AdminLayout><AdminDestinations /></AdminLayout>} />
-          <Route path="/admin/tours" element={<AdminLayout><AdminTours /></AdminLayout>} />
-          <Route path="/admin/bookings" element={<AdminLayout><AdminBookings /></AdminLayout>} />
-          <Route path="/admin/payments" element={<AdminLayout><AdminPayments /></AdminLayout>} />
-          <Route path="/admin/reviews" element={<AdminLayout><AdminReviews /></AdminLayout>} />
-          <Route path="/admin/reports" element={<AdminLayout><AdminReports /></AdminLayout>} />
-          <Route path="/admin/settings" element={<AdminLayout><AdminSettings /></AdminLayout>} />
-          <Route path="/admin/profile" element={<AdminLayout><AdminProfile /></AdminLayout>} />
+          
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="bookings" element={<AdminBookings />} />
+            <Route path="reviews" element={<AdminReviews />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="flights" element={<AdminFlights />} />
+            <Route path="hotels" element={<AdminHotels />} />
+            <Route path="destinations" element={<AdminDestinations />} />
+            <Route path="tours" element={<AdminTours />} />
+            <Route path="payments" element={<AdminPayments />} />
+            <Route path="reports" element={<AdminReports />} />
+            <Route path="settings" element={<AdminSettings />} />
+            <Route path="profile" element={<AdminProfile />} />
+            <Route path="notifications" element={<AdminNotifications />} />
+            <Route path="help" element={<AdminHelp />} />
+            <Route index element={<Navigate to="/admin/dashboard" replace />} />
+          </Route>
+
+          <Route path="/dashboard" element={<DashboardLayout />}>
+            <Route index element={<UserDashboard />} />
+            <Route path="dashboard" element={<UserDashboard />} />
+            <Route path="bookings" element={<UserBookings />} />
+            <Route path="flights" element={<UserFlights />} />
+            <Route path="hotels" element={<UserHotels />} />
+            <Route path="tours" element={<UserTours />} />
+            <Route path="payments" element={<UserPayments />} />
+            <Route path="notifications" element={<UserNotifications />} />
+            <Route path="reviews" element={<UserReviews />} />
+            <Route path="profile" element={<UserProfile />} />
+            <Route path="settings" element={<UserSettings />} />
+            <Route path="help" element={<UserHelp />} />
+          </Route>
+
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
-      {!hidePublicNavbar && <Footer />}
+      {showLayout && <Footer />}
     </div>
   );
 }

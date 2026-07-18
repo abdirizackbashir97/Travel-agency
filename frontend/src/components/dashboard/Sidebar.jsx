@@ -1,85 +1,119 @@
 import React from 'react';
-import { NavLink, Link } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import {
-  FaHome,
-  FaUsers,
-  FaPlane,
-  FaHotel,
-  FaMapMarkerAlt,
-  FaSuitcase,
-  FaBook,
-  FaCreditCard,
-  FaStar,
-  FaFileAlt,
-  FaCog,
-  FaSignOutAlt,
-} from 'react-icons/fa';
-import logo from '../../assets/logo/logo.png';
+  LayoutDashboard,
+  Calendar,
+  Plane,
+  Hotel,
+  Compass,
+  Heart,
+  BookMarked,
+  CreditCard,
+  Bell,
+  Star,
+  Settings,
+  HelpCircle,
+  User,
+  LogOut,
+  Menu,
+  X
+} from 'lucide-react';
 
-const Sidebar = ({ isOpen = true, setIsOpen }) => {
+const Sidebar = ({ isOpen, setIsOpen, userRole }) => {
   const navItems = [
-    { name: 'Dashboard', icon: FaHome, path: '/admin/dashboard' },
-    { name: 'Users', icon: FaUsers, path: '/admin/users' },
-    { name: 'Bookings', icon: FaBook, path: '/admin/bookings' },
-    { name: 'Destinations', icon: FaMapMarkerAlt, path: '/admin/destinations' },
-    { name: 'Flights', icon: FaPlane, path: '/admin/flights' },
-    { name: 'Hotels', icon: FaHotel, path: '/admin/hotels' },
-    { name: 'Tours', icon: FaSuitcase, path: '/admin/tours' },
-    { name: 'Payments', icon: FaCreditCard, path: '/admin/payments' },
-    { name: 'Reviews', icon: FaStar, path: '/admin/reviews' },
-    { name: 'Reports', icon: FaFileAlt, path: '/admin/reports' },
-    { name: 'Settings', icon: FaCog, path: '/admin/settings' },
+    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/dashboard/bookings', label: 'My Bookings', icon: Calendar },
+    { path: '/dashboard/trips', label: 'My Trips', icon: Plane },
+    { path: '/dashboard/saved', label: 'Saved Destinations', icon: BookMarked },
+    { path: '/dashboard/wishlist', label: 'Wishlist', icon: Heart },
+    { path: '/dashboard/flights', label: 'Flights', icon: Plane },
+    { path: '/dashboard/hotels', label: 'Hotels', icon: Hotel },
+    { path: '/dashboard/tours', label: 'Tours', icon: Compass },
+    { path: '/dashboard/payments', label: 'Payments', icon: CreditCard },
+    { path: '/dashboard/notifications', label: 'Notifications', icon: Bell },
+    { path: '/dashboard/reviews', label: 'Reviews', icon: Star },
+    { path: '/dashboard/profile', label: 'Profile', icon: User },
+    { path: '/dashboard/settings', label: 'Settings', icon: Settings },
+    { path: '/dashboard/help', label: 'Help Center', icon: HelpCircle },
   ];
 
+  const handleLogout = () => {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('user');
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userName');
+    window.location.href = '/login';
+  };
+
   return (
-    <aside
-      className={`bg-white border-r border-gray-200 text-gray-800 h-screen fixed left-0 top-0 z-50 flex flex-col shadow-sm transition-all duration-300 ease-in-out ${
-        isOpen ? 'w-60' : 'w-16'
-      }`}
-    >
-      <div className="p-4 flex items-center gap-3 border-b border-gray-200 flex-shrink-0 h-16">
-        <img src={logo} alt="SkyRoute" className="h-8 w-auto" />
-        {isOpen && <span className="text-lg font-bold tracking-wider text-gray-800">SkyRoute</span>}
-      </div>
-      <nav className="flex-1 overflow-y-auto py-4 px-3 pb-6 min-h-0">
-        {isOpen && <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest px-3 mb-3">Main Menu</p>}
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <NavLink key={item.path} to={item.path} end={item.path === '/admin/dashboard'}>
-              {({ isActive }) => (
-                <div
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-gray-100 ${
-                    isActive
-                      ? 'bg-blue-50 text-blue-700 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  } ${!isOpen ? 'justify-center' : ''}`}
-                >
-                  <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-blue-600' : 'text-gray-500'}`} />
-                  {isOpen && <span className="truncate">{item.name}</span>}
-                </div>
-              )}
-            </NavLink>
-          );
-        })}
-      </nav>
-      <div className="border-t border-gray-200 p-3 flex-shrink-0">
-        <NavLink to="/login">
-          {({ isActive }) => (
-            <div
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-gray-100 ${
-                isActive
-                  ? 'bg-red-50 text-red-700'
-                  : 'text-gray-600 hover:text-gray-900'
-              } ${!isOpen ? 'justify-center' : ''}`}
-            >
-              <FaSignOutAlt className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-red-600' : 'text-gray-500'}`} />
-              {isOpen && <span>Logout</span>}
-            </div>
-          )}
-        </NavLink>
-      </div>
-    </aside>
+    <>
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={`fixed top-0 left-0 h-full bg-gray-900 text-white w-72 z-50 transition-transform duration-300 ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        } lg:translate-x-0`}
+      >
+        {/* Logo */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-700">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">✈️</span>
+            <span className="text-xl font-bold">SkyRoute</span>
+          </div>
+          <button
+            className="lg:hidden text-gray-400 hover:text-white"
+            onClick={() => setIsOpen(false)}
+          >
+            <X size={24} />
+          </button>
+        </div>
+
+        {/* Navigation */}
+        <nav className="p-4 overflow-y-auto h-[calc(100vh-120px)]">
+          <ul className="space-y-1">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <li key={item.path}>
+                  <NavLink
+                    to={item.path}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 px-4 py-2.5 rounded-lg transition ${
+                        isActive
+                          ? 'bg-indigo-600 text-white'
+                          : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                      }`
+                    }
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <Icon size={20} />
+                    <span className="text-sm">{item.label}</span>
+                  </NavLink>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+
+        {/* Logout at bottom */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-700 bg-gray-900">
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-4 py-2.5 rounded-lg w-full text-gray-300 hover:bg-gray-800 hover:text-white transition"
+          >
+            <LogOut size={20} />
+            <span className="text-sm">Logout</span>
+          </button>
+        </div>
+      </aside>
+    </>
   );
 };
 

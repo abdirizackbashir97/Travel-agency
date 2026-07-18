@@ -3,207 +3,168 @@ from flask_cors import CORS
 from flask_mail import Mail, Message
 from dotenv import load_dotenv
 import os
-import json
-
-from config.database import init_db, get_db_connection, dict_factory
-from services.mpesa_service import MpesaService
-from auth_routes import register_auth_routes
-from user_routes import register_user_routes
-from routes.destination_routes import register_destination_routes
-from routes.hotel_routes import register_hotel_routes
-from routes.flight_routes import register_flight_routes
-from routes.tour_routes import register_tour_routes
-from routes.review_routes import register_review_routes
-from routes.booking_routes import register_booking_routes
-from routes.notification_routes import register_notification_routes
+import sqlite3
+import jwt
+from datetime import datetime, timedelta
+from functools import wraps
 
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)
 
-# Email configuration
-app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
-app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
-app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'True') == 'True'
-app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
-app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
-app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER')
+# CORS - Configure properly
+CORS(app, 
+     origins=["http://localhost:5173"], 
+     supports_credentials=True,
+     allow_headers=["Content-Type", "Authorization"],
+     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 
-mail = Mail(app)
+def get_db():
+    conn = sqlite3.connect('database/database.db')
+    conn.row_factory = sqlite3.Row
+    return conn
 
-# Initialize database
-init_db()
+JWT_SECRET = os.getenv('JWT_SECRET', 'your-super-secret-key')
 
-# Initialize M-Pesa service
-mpesa_service = MpesaService()
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'error': 'Missing token'}), 401
+        token = auth_header.split(' ')[1]
+        try:
+            data = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
+            user_id = data['user_id']
+        except:
+            return jsonify({'error': 'Invalid token'}), 401
+        
+        conn = get_db()
+        user = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+        conn.close()
+        if not user:
+            return jsonify({'error': 'User not found'}), 401
+        request.user = user
+        return f(*args, **kwargs)
+    return decorated
 
-# Register auth routes
-register_auth_routes(app)
+# ---------- NOTIFICATIONS API (with optional auth) ----------
+@app.route('/api/notifications', methods=['GET'])
+def get_notifications():
+    # Try to get user from token, but don't fail if not present
+    user_id = 1  # Default to admin for testing
+    
+    auth_header = request.headers.get('Authorization')
+    if auth_header and auth_header.startswith('Bearer '):
+        try:
+            token = auth_header.split(' ')[1]
+            data = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
+            user_id = data['user_id']
+        except:
+            pass
+    
+    conn = get_db()
+    notifications = conn.execute('''
+        SELECT * FROM notifications 
+        WHERE user_id = ? 
+        ORDER BY created_at DESC 
+        LIMIT 50
+    ''', (user_id,)).fetchall()
+    conn.close()
+    return jsonify({'success': True, 'notifications': [dict(n) for n in notifications]})
 
-# Register user routes
-register_user_routes(app)
+@app.route('/api/notifications/unread', methods=['GET'])
+def get_unread_notifications():
+    user_id = 1  # Default to admin for testing
+    
+    auth_header = request.headers.get('Authorization')
+    if auth_header and auth_header.startswith('Bearer '):
+        try:
+            token = auth_header.split(' ')[1]
+            data = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
+            user_id = data['user_id']
+        except:
+            pass
+    
+    conn = get_db()
+    count = conn.execute('''
+        SELECT COUNT(*) as count FROM notifications 
+        WHERE user_id = ? AND is_read = 0
+    ''', (user_id,)).fetchone()
+    conn.close()
+    return jsonify({'success': True, 'count': count['count']})
 
-# Register destination routes
-register_destination_routes(app)
-
-# Register hotel routes
-register_hotel_routes(app)
-
-# Register flight routes
-register_flight_routes(app)
-
-# Register tour routes
-register_tour_routes(app)
-
-# Register review routes
-register_review_routes(app)
-
-# Register booking routes
-register_booking_routes(app)
-
-# Register notification routes
-register_notification_routes(app)
-
-@app.route('/health', methods=['GET'])
-def health():
+# ---------- LOGIN ----------
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+    
+    conn = get_db()
+    user = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+    conn.close()
+    
+    if not user:
+        return jsonify({'success': False, 'message': 'Invalid credentials'}), 401
+    
+    token = jwt.encode({'user_id': user['id'], 'exp': datetime.utcnow() + timedelta(hours=24)}, JWT_SECRET, algorithm='HS256')
+    
     return jsonify({
-        'status': 'OK',
-        'message': 'Travel Agency Server is running',
-        'database': 'SQLite3'
+        'success': True,
+        'access_token': token,
+        'user': dict(user)
     })
 
-@app.route('/api/payments/initiate', methods=['POST'])
-def initiate_payment():
-    try:
-        data = request.json
-        phone_number = data.get('phoneNumber')
-        amount = data.get('amount')
-        booking_details = data.get('bookingDetails', {})
-        
-        if not phone_number or not amount:
-            return jsonify({
-                'success': False,
-                'message': 'Phone number and amount are required'
-            }), 400
-        
-        if amount <= 0:
-            return jsonify({
-                'success': False,
-                'message': 'Amount must be greater than 0'
-            }), 400
-        
-        import time
-        account_reference = f"BOOK-{int(time.time() * 1000)}"
-        
-        result = mpesa_service.initiate_payment(
-            phone_number,
-            amount,
-            account_reference,
-            booking_details
-        )
-        
-        return jsonify(result), 200 if result['success'] else 500
-        
-    except Exception as e:
-        print(f"Payment initiation error: {e}")
-        return jsonify({
-            'success': False,
-            'message': 'Failed to initiate payment',
-            'error': str(e)
-        }), 500
+# ---------- ADMIN BOOKINGS ----------
+@app.route('/api/admin/bookings', methods=['GET'])
+def admin_get_all_bookings():
+    conn = get_db()
+    bookings = conn.execute('''
+        SELECT b.*, u.first_name, u.second_name, u.email 
+        FROM bookings b 
+        JOIN users u ON b.user_id = u.id 
+        ORDER BY b.booking_date DESC
+    ''').fetchall()
+    conn.close()
+    return jsonify({'success': True, 'bookings': [dict(b) for b in bookings]})
 
-@app.route('/api/payments/status/<checkout_request_id>', methods=['GET'])
-def query_payment_status(checkout_request_id):
-    try:
-        result = mpesa_service.query_status(checkout_request_id)
-        return jsonify(result), 200 if result['success'] else 500
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': 'Failed to query payment status',
-            'error': str(e)
-        }), 500
+# ---------- ADMIN UPDATE STATUS ----------
+@app.route('/api/admin/bookings/<int:booking_id>/status', methods=['PUT'])
+def admin_update_booking_status(booking_id):
+    data = request.get_json()
+    new_status = data.get('status')
+    
+    conn = get_db()
+    conn.execute("UPDATE bookings SET status = ? WHERE id = ?", (new_status, booking_id))
+    conn.commit()
+    conn.close()
+    
+    return jsonify({'success': True, 'message': f'Booking {new_status}'})
 
-@app.route('/api/payments/callback', methods=['POST'])
-def handle_callback():
-    try:
-        callback_data = request.json
-        result = mpesa_service.handle_callback(callback_data)
-        return jsonify(result), 200
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': 'Failed to process callback',
-            'error': str(e)
-        }), 500
+# ---------- FLIGHTS ----------
+@app.route('/api/flights', methods=['GET'])
+def get_flights():
+    conn = get_db()
+    flights = conn.execute("SELECT * FROM flights WHERE is_active = 1").fetchall()
+    conn.close()
+    return jsonify({'success': True, 'flights': [dict(f) for f in flights]})
 
-@app.route('/api/payments/transactions', methods=['GET'])
-def get_transactions():
-    try:
-        transactions = mpesa_service.get_transactions()
-        return jsonify({'success': True, 'transactions': transactions})
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
+# ---------- HOTELS ----------
+@app.route('/api/hotels', methods=['GET'])
+def get_hotels():
+    conn = get_db()
+    hotels = conn.execute("SELECT * FROM hotels WHERE is_active = 1").fetchall()
+    conn.close()
+    return jsonify({'success': True, 'hotels': [dict(h) for h in hotels]})
 
-@app.route('/api/payments/transaction/<int:id>', methods=['GET'])
-def get_transaction_by_id(id):
-    try:
-        conn = get_db_connection()
-        conn.row_factory = dict_factory
-        cursor = conn.cursor()
-        cursor.execute('SELECT * FROM transactions WHERE id = ?', (id,))
-        transaction = cursor.fetchone()
-        conn.close()
-        
-        if not transaction:
-            return jsonify({
-                'success': False,
-                'message': 'Transaction not found'
-            }), 404
-        
-        return jsonify({
-            'success': True,
-            'transaction': transaction
-        })
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': 'Failed to fetch transaction',
-            'error': str(e)
-        }), 500
-
-@app.route('/api/payments/transaction/checkout/<checkout_request_id>', methods=['GET'])
-def get_transaction_by_checkout_id(checkout_request_id):
-    try:
-        conn = get_db_connection()
-        conn.row_factory = dict_factory
-        cursor = conn.cursor()
-        cursor.execute('SELECT * FROM transactions WHERE checkout_request_id = ?', (checkout_request_id,))
-        transaction = cursor.fetchone()
-        conn.close()
-        
-        if not transaction:
-            return jsonify({
-                'success': False,
-                'message': 'Transaction not found'
-            }), 404
-        
-        return jsonify({
-            'success': True,
-            'transaction': transaction
-        })
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': 'Failed to fetch transaction',
-            'error': str(e)
-        }), 500
+# ---------- TOURS ----------
+@app.route('/api/tours', methods=['GET'])
+def get_tours():
+    conn = get_db()
+    tours = conn.execute("SELECT * FROM tours WHERE is_active = 1").fetchall()
+    conn.close()
+    return jsonify({'success': True, 'tours': [dict(t) for t in tours]})
 
 if __name__ == '__main__':
-    port = int(os.getenv('PORT', 5000))
-    app.run(debug=True, host='0.0.0.0', port=port)
+    app.run(debug=True, port=5000)
