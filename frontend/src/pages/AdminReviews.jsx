@@ -11,7 +11,8 @@ import {
   Heart,
   BarChart3,
   PieChart as PieChartIcon,
-  Activity
+  Activity,
+  Shield
 } from 'lucide-react';
 import {
   BarChart,
@@ -44,7 +45,6 @@ export default function AdminReviews() {
     activeUsers: 0
   });
 
-  // Sample data - will be replaced with real API data
   const ratingDistribution = [
     { rating: '⭐ 5', count: 45 },
     { rating: '⭐ 4', count: 32 },
@@ -83,7 +83,6 @@ export default function AdminReviews() {
     setLoading(true);
     try {
       const token = localStorage.getItem('accessToken');
-      // You can replace these with real API calls
       const response = await axios.get('http://localhost:5000/api/admin/reviews', {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -91,7 +90,6 @@ export default function AdminReviews() {
         setReviews(response.data.reviews || []);
       }
       
-      // Set stats (in production, fetch from API)
       setStats({
         totalReviews: 120,
         averageRating: 4.6,
@@ -109,6 +107,14 @@ export default function AdminReviews() {
     }
   };
 
+  // White stat cards with colored icons
+  const statCards = [
+    { icon: Star, title: 'Average Rating', value: '4.8', subtitle: 'Based on 120 reviews', iconColor: 'text-yellow-600', bgColor: 'bg-yellow-50' },
+    { icon: ThumbsUp, title: 'Satisfaction Score', value: '92%', subtitle: 'Very satisfied users', iconColor: 'text-green-600', bgColor: 'bg-green-50' },
+    { icon: Shield, title: 'Trust Score', value: '88%', subtitle: 'Users trust SkyRoute', iconColor: 'text-blue-600', bgColor: 'bg-blue-50' },
+    { icon: Users, title: 'Active Users', value: '78', subtitle: 'Last 30 days', iconColor: 'text-purple-600', bgColor: 'bg-purple-50' },
+  ];
+
   if (loading) {
     return (
       <div className="p-6">
@@ -125,111 +131,91 @@ export default function AdminReviews() {
     );
   }
 
-  const StatCard = ({ icon: Icon, title, value, subtitle, color }) => (
-    <div className={`bg-gradient-to-br ${color} text-white p-6 rounded-2xl shadow-lg`}>
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium opacity-80">{title}</p>
-          <p className="text-3xl font-bold mt-1">{value}</p>
-          <p className="text-xs opacity-70 mt-1">{subtitle}</p>
+  const StatCard = ({ icon: Icon, title, value, subtitle, iconColor, bgColor }) => (
+    <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition">
+      <div className="flex items-center justify-between mb-3">
+        <div className={`p-2.5 rounded-xl ${bgColor}`}>
+          <Icon size={20} className={iconColor} />
         </div>
-        <Icon size={32} className="opacity-60" />
       </div>
+      <p className="text-2xl font-bold text-gray-800">{value}</p>
+      <p className="text-sm text-gray-500 mt-0.5">{title}</p>
+      <p className="text-xs text-gray-400 mt-1">{subtitle}</p>
     </div>
   );
 
   return (
-    <div className="p-6">
+    <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-800">⭐ Reviews & Analytics</h1>
         <p className="text-gray-500 text-sm">Track user trust, satisfaction, and engagement metrics</p>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards - ALL WHITE */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard 
-          icon={Star}
-          title="Average Rating"
-          value="4.8"
-          subtitle="Based on 120 reviews"
-          color="from-yellow-500 to-orange-500"
-        />
-        <StatCard 
-          icon={ThumbsUp}
-          title="Satisfaction Score"
-          value="92%"
-          subtitle="Very satisfied users"
-          color="from-green-500 to-emerald-500"
-        />
-        <StatCard 
-          icon={Award}
-          title="Trust Score"
-          value="88%"
-          subtitle="Users trust SkyRoute"
-          color="from-blue-500 to-indigo-500"
-        />
-        <StatCard 
-          icon={Users}
-          title="Active Users"
-          value="78"
-          subtitle="Last 30 days"
-          color="from-purple-500 to-pink-500"
-        />
+        {statCards.map((card, index) => (
+          <StatCard key={index} {...card} />
+        ))}
       </div>
 
-      {/* Trust Metrics */}
+      {/* Trust Metrics - ALL WHITE */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Heart className="text-red-500" size={24} />
-            <h3 className="font-semibold text-gray-800">User Trust Index</h3>
+        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 bg-green-50 rounded-lg">
+              <Heart size={18} className="text-red-500" />
+            </div>
+            <h3 className="font-semibold text-gray-800 text-sm">User Trust Index</h3>
           </div>
           <div className="flex items-end gap-2">
-            <span className="text-4xl font-bold text-gray-800">94%</span>
+            <span className="text-3xl font-bold text-gray-800">94%</span>
             <span className="text-sm text-green-500">↑ 12%</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
             <div className="bg-gradient-to-r from-green-400 to-green-500 h-2 rounded-full" style={{ width: '94%' }}></div>
           </div>
-          <p className="text-xs text-gray-500 mt-2">Based on user reviews and ratings</p>
+          <p className="text-xs text-gray-400 mt-2">Based on user reviews and ratings</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <TrendingUp className="text-blue-500" size={24} />
-            <h3 className="font-semibold text-gray-800">User Growth</h3>
+        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 bg-blue-50 rounded-lg">
+              <TrendingUp size={18} className="text-blue-500" />
+            </div>
+            <h3 className="font-semibold text-gray-800 text-sm">User Growth</h3>
           </div>
           <div className="flex items-end gap-2">
-            <span className="text-4xl font-bold text-gray-800">+23%</span>
+            <span className="text-3xl font-bold text-gray-800">+23%</span>
             <span className="text-sm text-green-500">↑ This month</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
             <div className="bg-gradient-to-r from-blue-400 to-blue-500 h-2 rounded-full" style={{ width: '78%' }}></div>
           </div>
-          <p className="text-xs text-gray-500 mt-2">156 total users registered</p>
+          <p className="text-xs text-gray-400 mt-2">156 total users registered</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Activity className="text-purple-500" size={24} />
-            <h3 className="font-semibold text-gray-800">Engagement Rate</h3>
+        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 bg-purple-50 rounded-lg">
+              <Activity size={18} className="text-purple-500" />
+            </div>
+            <h3 className="font-semibold text-gray-800 text-sm">Engagement Rate</h3>
           </div>
           <div className="flex items-end gap-2">
-            <span className="text-4xl font-bold text-gray-800">76%</span>
+            <span className="text-3xl font-bold text-gray-800">76%</span>
             <span className="text-sm text-green-500">↑ 8%</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
             <div className="bg-gradient-to-r from-purple-400 to-purple-500 h-2 rounded-full" style={{ width: '76%' }}></div>
           </div>
-          <p className="text-xs text-gray-500 mt-2">Users actively engaging</p>
+          <p className="text-xs text-gray-400 mt-2">Users actively engaging</p>
         </div>
       </div>
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Rating Distribution */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
           <h3 className="font-semibold text-gray-800 mb-4">📊 Rating Distribution</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -248,8 +234,7 @@ export default function AdminReviews() {
           </div>
         </div>
 
-        {/* Monthly Activity */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
           <h3 className="font-semibold text-gray-800 mb-4">📈 Monthly Activity</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -269,7 +254,7 @@ export default function AdminReviews() {
 
       {/* User Activity Trend */}
       <div className="grid grid-cols-1 gap-6 mb-6">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
           <h3 className="font-semibold text-gray-800 mb-4">📊 User Activity Trend</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -289,7 +274,7 @@ export default function AdminReviews() {
       </div>
 
       {/* Recent Reviews */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+      <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-gray-800">📝 Recent Reviews</h3>
           <span className="text-sm text-gray-500">Showing latest feedback</span>

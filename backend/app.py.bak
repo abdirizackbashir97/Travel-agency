@@ -1,11 +1,14 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from dotenv import load_dotenv
+import os
 import sqlite3
 import jwt
 import bcrypt
 from datetime import datetime, timedelta
 from functools import wraps
-import os
+
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app, origins=["http://localhost:5173"], supports_credentials=True)
@@ -15,7 +18,7 @@ def get_db():
     conn.row_factory = sqlite3.Row
     return conn
 
-JWT_SECRET = 'your-super-secret-key'
+JWT_SECRET = os.getenv('JWT_SECRET', 'your-super-secret-key')
 
 def token_required(f):
     @wraps(f)
@@ -71,7 +74,10 @@ def register():
         token = jwt.encode({'user_id': user['id'], 'exp': datetime.utcnow() + timedelta(hours=24)}, JWT_SECRET, algorithm='HS256')
         
         return jsonify({'success': True, 'message': 'User registered', 'access_token': token, 'user': dict(user)})
+    except sqlite3.IntegrityError:
+        return jsonify({'success': False, 'message': 'Email already exists'}), 400
     except Exception as e:
+        print(f"❌ Register error: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
 # ============ LOGIN ============
@@ -106,44 +112,18 @@ def login():
         
         return jsonify({'success': True, 'message': 'Login successful', 'access_token': token, 'user': dict(user)})
     except Exception as e:
+        print(f"❌ Login error: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
-# ============ NOTIFICATIONS ============
-@app.route('/api/notifications', methods=['GET'])
-@token_required
-def get_notifications():
-    try:
-        user_id = request.user['id']
-        conn = get_db()
-        notifications = conn.execute('''
-            SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 50
-        ''', (user_id,)).fetchall()
-        conn.close()
-        return jsonify({'success': True, 'notifications': [dict(n) for n in notifications]})
-    except Exception as e:
-        return jsonify({'success': False, 'notifications': []}), 500
-
-@app.route('/api/notifications/unread', methods=['GET'])
-@token_required
-def get_unread_count():
-    try:
-        user_id = request.user['id']
-        conn = get_db()
-        count = conn.execute('''
-            SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0
-        ''', (user_id,)).fetchone()
-        conn.close()
-        return jsonify({'success': True, 'count': count['count'] or 0})
-    except Exception as e:
-        return jsonify({'success': True, 'count': 0}), 200
-
-# ============ BOOKINGS ============
+# ============ CREATE BOOKING ============
 @app.route('/api/bookings', methods=['POST'])
 @token_required
 def create_booking():
     try:
         user_id = request.user['id']
         data = request.get_json()
+        
+        print(f"📝 Booking request: {data}")
         
         booking_type = data.get('booking_type')
         booking_id = data.get('booking_id')
@@ -213,11 +193,64 @@ def create_booking():
         conn.commit()
         conn.close()
         
+        print(f"✅ Booking created: #{booking_id_new}")
+        
         return jsonify({'success': True, 'message': 'Booking created', 'booking_id': booking_id_new})
     except Exception as e:
+        print(f"❌ Booking error: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
-# ============ ADMIN BOOKINGS ============
+# ============ ADMIN UPDATE BOOKING STATUS ============
+@app.route('/api/admin/bookings/<int:booking_id>/status', methods=['PUT'])
+@token_required
+def admin_update_booking_status(booking_id):
+    try:
+        if request.user['role'] != 'admin':
+            return jsonify({'success': False, 'message': 'Admin only'}), 403
+        
+        data = request.get_json()
+        new_status = data.get('status')
+        
+        print(f"📝 Admin updating booking #{booking_id} to: {new_status}")
+        
+        if new_status not in ['pending', 'confirmed', 'cancelled']:
+            return jsonify({'success': False, 'message': 'Invalid status'}), 400
+        
+        conn = get_db()
+        
+        booking = conn.execute('''
+            SELECT b.*, u.email, u.first_name, u.second_name
+            FROM bookings b
+            JOIN users u ON b.user_id = u.id
+            WHERE b.id = ?
+        ''', (booking_id,)).fetchone()
+        
+        if not booking:
+            conn.close()
+            return jsonify({'success': False, 'message': 'Booking not found'}), 404
+        
+        conn.execute("UPDATE bookings SET status = ? WHERE id = ?", (new_status, booking_id))
+        conn.commit()
+        
+        notification_message = f"Your booking #{booking_id} has been {new_status}"
+        conn.execute('''
+            INSERT INTO notifications (user_id, title, message, is_read, created_at)
+            VALUES (?, 'Booking Update', ?, 0, datetime('now'))
+        ''', (booking['user_id'], notification_message))
+        conn.commit()
+        conn.close()
+        
+        print(f"✅ Booking #{booking_id} updated to {new_status}")
+        
+        return jsonify({
+            'success': True, 
+            'message': f'Booking #{booking_id} updated to {new_status}'
+        })
+    except Exception as e:
+        print(f"❌ Error updating booking: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# ============ ADMIN GET ALL BOOKINGS ============
 @app.route('/api/admin/bookings', methods=['GET'])
 @token_required
 def admin_get_all_bookings():
@@ -233,25 +266,6 @@ def admin_get_all_bookings():
     ''').fetchall()
     conn.close()
     return jsonify({'success': True, 'bookings': [dict(b) for b in bookings]})
-
-@app.route('/api/admin/bookings/<int:booking_id>/status', methods=['PUT'])
-@token_required
-def admin_update_booking_status(booking_id):
-    if request.user['role'] != 'admin':
-        return jsonify({'success': False, 'message': 'Admin only'}), 403
-    
-    data = request.get_json()
-    new_status = data.get('status')
-    
-    if new_status not in ['pending', 'confirmed', 'cancelled']:
-        return jsonify({'success': False, 'message': 'Invalid status'}), 400
-    
-    conn = get_db()
-    conn.execute("UPDATE bookings SET status = ? WHERE id = ?", (new_status, booking_id))
-    conn.commit()
-    conn.close()
-    
-    return jsonify({'success': True, 'message': f'Booking updated to {new_status}'})
 
 # ============ ADMIN STATS ============
 @app.route('/api/admin/stats', methods=['GET'])
@@ -275,35 +289,14 @@ def admin_get_stats():
         }
     })
 
-# ============ ADMIN RECENT BOOKINGS ============
-@app.route('/api/admin/recent-bookings', methods=['GET'])
-@token_required
-def admin_get_recent_bookings():
-    if request.user['role'] != 'admin':
-        return jsonify({'success': False, 'message': 'Admin only'}), 403
-    
-    conn = get_db()
-    bookings = conn.execute('''
-        SELECT b.*, u.first_name, u.second_name, u.email
-        FROM bookings b
-        JOIN users u ON b.user_id = u.id
-        ORDER BY b.booking_date DESC
-        LIMIT 5
-    ''').fetchall()
-    conn.close()
-    return jsonify({'success': True, 'bookings': [dict(b) for b in bookings]})
-
-# ============ USER BOOKINGS ============
-@app.route('/api/user/bookings', methods=['GET'])
-@token_required
-def get_user_bookings():
-    user_id = request.user['id']
-    conn = get_db()
-    bookings = conn.execute("SELECT * FROM bookings WHERE user_id = ? ORDER BY booking_date DESC", (user_id,)).fetchall()
-    conn.close()
-    return jsonify({'success': True, 'bookings': [dict(b) for b in bookings]})
-
 # ============ PUBLIC ROUTES ============
+@app.route('/api/destinations', methods=['GET'])
+def get_destinations():
+    conn = get_db()
+    destinations = conn.execute("SELECT * FROM destinations").fetchall()
+    conn.close()
+    return jsonify({'success': True, 'destinations': [dict(d) for d in destinations]})
+
 @app.route('/api/flights', methods=['GET'])
 def get_flights():
     conn = get_db()
@@ -325,179 +318,69 @@ def get_tours():
     conn.close()
     return jsonify({'success': True, 'tours': [dict(t) for t in tours]})
 
+# ============ USER BOOKINGS ============
+@app.route('/api/user/bookings', methods=['GET'])
+@token_required
+def get_user_bookings():
+    user_id = request.user['id']
+    conn = get_db()
+    bookings = conn.execute("SELECT * FROM bookings WHERE user_id = ? ORDER BY booking_date DESC", (user_id,)).fetchall()
+    conn.close()
+    return jsonify({'success': True, 'bookings': [dict(b) for b in bookings]})
+
 # ============ RUN ============
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5000)
 
-# ============ ADMIN FLIGHT CRUD ============
-@app.route('/api/admin/flights', methods=['POST'])
+# ============ NOTIFICATIONS ============
+@app.route('/api/notifications', methods=['GET'])
 @token_required
-def admin_add_flight():
-    if request.user['role'] != 'admin':
-        return jsonify({'success': False, 'message': 'Admin only'}), 403
-    
-    data = request.get_json()
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute('''
-        INSERT INTO flights (airline, flight_number, departure_city, arrival_city, 
-            departure_time, arrival_time, duration, price, flight_type, baggage_allowance, travel_date, is_active)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (
-        data.get('airline'), data.get('flight_number'), data.get('departure_city'), 
-        data.get('arrival_city'), data.get('departure_time'), data.get('arrival_time'),
-        data.get('duration'), data.get('price'), data.get('flight_type', 'Direct'),
-        data.get('baggage_allowance', '23kg'), data.get('travel_date'), data.get('is_active', 1)
-    ))
-    conn.commit()
-    conn.close()
-    return jsonify({'success': True, 'message': 'Flight added'})
+def get_notifications():
+    try:
+        user_id = request.user['id']
+        conn = get_db()
+        notifications = conn.execute('''
+            SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 50
+        ''', (user_id,)).fetchall()
+        conn.close()
+        return jsonify({'success': True, 'notifications': [dict(n) for n in notifications]})
+    except Exception as e:
+        print(f"❌ Notifications error: {e}")
+        return jsonify({'success': False, 'notifications': []}), 500
 
-@app.route('/api/admin/flights/<int:flight_id>', methods=['PUT'])
+@app.route('/api/notifications/unread', methods=['GET'])
 @token_required
-def admin_update_flight(flight_id):
-    if request.user['role'] != 'admin':
-        return jsonify({'success': False, 'message': 'Admin only'}), 403
-    
-    data = request.get_json()
-    conn = get_db()
-    conn.execute('''
-        UPDATE flights SET 
-            airline=?, flight_number=?, departure_city=?, arrival_city=?,
-            departure_time=?, arrival_time=?, duration=?, price=?,
-            flight_type=?, baggage_allowance=?, travel_date=?, is_active=?
-        WHERE id=?
-    ''', (
-        data.get('airline'), data.get('flight_number'), data.get('departure_city'),
-        data.get('arrival_city'), data.get('departure_time'), data.get('arrival_time'),
-        data.get('duration'), data.get('price'), data.get('flight_type', 'Direct'),
-        data.get('baggage_allowance', '23kg'), data.get('travel_date'), data.get('is_active', 1),
-        flight_id
-    ))
-    conn.commit()
-    conn.close()
-    return jsonify({'success': True, 'message': 'Flight updated'})
+def get_unread_count():
+    try:
+        user_id = request.user['id']
+        conn = get_db()
+        count = conn.execute('''
+            SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0
+        ''', (user_id,)).fetchone()
+        conn.close()
+        return jsonify({'success': True, 'count': count['count'] or 0})
+    except Exception as e:
+        print(f"❌ Unread count error: {e}")
+        return jsonify({'success': True, 'count': 0}), 200
 
-@app.route('/api/admin/flights/<int:flight_id>', methods=['DELETE'])
+# ============ ADMIN RECENT BOOKINGS ============
+@app.route('/api/admin/recent-bookings', methods=['GET'])
 @token_required
-def admin_delete_flight(flight_id):
-    if request.user['role'] != 'admin':
-        return jsonify({'success': False, 'message': 'Admin only'}), 403
-    
-    conn = get_db()
-    conn.execute("DELETE FROM flights WHERE id = ?", (flight_id,))
-    conn.commit()
-    conn.close()
-    return jsonify({'success': True, 'message': 'Flight deleted'})
-
-# ============ ADMIN HOTEL CRUD ============
-@app.route('/api/admin/hotels', methods=['POST'])
-@token_required
-def admin_add_hotel():
-    if request.user['role'] != 'admin':
-        return jsonify({'success': False, 'message': 'Admin only'}), 403
-    
-    data = request.get_json()
-    conn = get_db()
-    conn.execute('''
-        INSERT INTO hotels (hotel_name, location, country, description, price_per_night, rating, amenities, category, is_active)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (
-        data.get('hotel_name'), data.get('location'), data.get('country'),
-        data.get('description'), data.get('price_per_night'), data.get('rating', 4.5),
-        data.get('amenities'), data.get('category'), data.get('is_active', 1)
-    ))
-    conn.commit()
-    conn.close()
-    return jsonify({'success': True, 'message': 'Hotel added'})
-
-@app.route('/api/admin/hotels/<int:hotel_id>', methods=['PUT'])
-@token_required
-def admin_update_hotel(hotel_id):
-    if request.user['role'] != 'admin':
-        return jsonify({'success': False, 'message': 'Admin only'}), 403
-    
-    data = request.get_json()
-    conn = get_db()
-    conn.execute('''
-        UPDATE hotels SET 
-            hotel_name=?, location=?, country=?, description=?,
-            price_per_night=?, rating=?, amenities=?, category=?, is_active=?
-        WHERE id=?
-    ''', (
-        data.get('hotel_name'), data.get('location'), data.get('country'),
-        data.get('description'), data.get('price_per_night'), data.get('rating', 4.5),
-        data.get('amenities'), data.get('category'), data.get('is_active', 1),
-        hotel_id
-    ))
-    conn.commit()
-    conn.close()
-    return jsonify({'success': True, 'message': 'Hotel updated'})
-
-@app.route('/api/admin/hotels/<int:hotel_id>', methods=['DELETE'])
-@token_required
-def admin_delete_hotel(hotel_id):
-    if request.user['role'] != 'admin':
-        return jsonify({'success': False, 'message': 'Admin only'}), 403
-    
-    conn = get_db()
-    conn.execute("DELETE FROM hotels WHERE id = ?", (hotel_id,))
-    conn.commit()
-    conn.close()
-    return jsonify({'success': True, 'message': 'Hotel deleted'})
-
-# ============ ADMIN TOUR CRUD ============
-@app.route('/api/admin/tours', methods=['POST'])
-@token_required
-def admin_add_tour():
-    if request.user['role'] != 'admin':
-        return jsonify({'success': False, 'message': 'Admin only'}), 403
-    
-    data = request.get_json()
-    conn = get_db()
-    conn.execute('''
-        INSERT INTO tours (tour_name, location, country, description, price_per_person, duration_days, rating, is_active)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (
-        data.get('tour_name'), data.get('location'), data.get('country'),
-        data.get('description'), data.get('price_per_person'), data.get('duration_days', 1),
-        data.get('rating', 4.5), data.get('is_active', 1)
-    ))
-    conn.commit()
-    conn.close()
-    return jsonify({'success': True, 'message': 'Tour added'})
-
-@app.route('/api/admin/tours/<int:tour_id>', methods=['PUT'])
-@token_required
-def admin_update_tour(tour_id):
-    if request.user['role'] != 'admin':
-        return jsonify({'success': False, 'message': 'Admin only'}), 403
-    
-    data = request.get_json()
-    conn = get_db()
-    conn.execute('''
-        UPDATE tours SET 
-            tour_name=?, location=?, country=?, description=?,
-            price_per_person=?, duration_days=?, rating=?, is_active=?
-        WHERE id=?
-    ''', (
-        data.get('tour_name'), data.get('location'), data.get('country'),
-        data.get('description'), data.get('price_per_person'), data.get('duration_days', 1),
-        data.get('rating', 4.5), data.get('is_active', 1),
-        tour_id
-    ))
-    conn.commit()
-    conn.close()
-    return jsonify({'success': True, 'message': 'Tour updated'})
-
-@app.route('/api/admin/tours/<int:tour_id>', methods=['DELETE'])
-@token_required
-def admin_delete_tour(tour_id):
-    if request.user['role'] != 'admin':
-        return jsonify({'success': False, 'message': 'Admin only'}), 403
-    
-    conn = get_db()
-    conn.execute("DELETE FROM tours WHERE id = ?", (tour_id,))
-    conn.commit()
-    conn.close()
-    return jsonify({'success': True, 'message': 'Tour deleted'})
+def admin_get_recent_bookings():
+    try:
+        if request.user['role'] != 'admin':
+            return jsonify({'success': False, 'message': 'Admin only'}), 403
+        
+        conn = get_db()
+        bookings = conn.execute('''
+            SELECT b.*, u.first_name, u.second_name, u.email
+            FROM bookings b
+            JOIN users u ON b.user_id = u.id
+            ORDER BY b.booking_date DESC
+            LIMIT 5
+        ''').fetchall()
+        conn.close()
+        return jsonify({'success': True, 'bookings': [dict(b) for b in bookings]})
+    except Exception as e:
+        print(f"❌ Recent bookings error: {e}")
+        return jsonify({'success': False, 'bookings': []}), 500

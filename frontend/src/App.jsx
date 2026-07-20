@@ -26,13 +26,17 @@ import UserHelp from './pages/UserHelp';
 import AdminLayout from './components/dashboard/AdminLayout';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminBookings from './pages/AdminBookings';
-import AdminReviews from './pages/AdminReviews';
+import AdminBookingManagement from './pages/AdminBookingManagement';
+import AdminFlightBookings from './pages/AdminFlightBookings';
+import AdminHotelBookings from './pages/AdminHotelBookings';
+import AdminTourBookings from './pages/AdminTourBookings';
 import AdminUsers from './pages/AdminUsers';
 import AdminFlights from './pages/AdminFlights';
 import AdminHotels from './pages/AdminHotels';
 import AdminDestinations from './pages/AdminDestinations';
 import AdminTours from './pages/AdminTours';
 import AdminPayments from './pages/AdminPayments';
+import AdminReviews from './pages/AdminReviews';
 import AdminReports from './pages/AdminReports';
 import AdminSettings from './pages/AdminSettings';
 import AdminProfile from './pages/AdminProfile';
@@ -62,16 +66,21 @@ function AppContent() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           
+          {/* Admin Routes */}
           <Route path="/admin" element={<AdminLayout />}>
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="bookings" element={<AdminBookings />} />
-            <Route path="reviews" element={<AdminReviews />} />
+            <Route path="booking-management" element={<AdminBookingManagement />} />
+            <Route path="flights-bookings" element={<AdminFlightBookings />} />
+            <Route path="hotels-bookings" element={<AdminHotelBookings />} />
+            <Route path="tours-bookings" element={<AdminTourBookings />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="flights" element={<AdminFlights />} />
             <Route path="hotels" element={<AdminHotels />} />
             <Route path="destinations" element={<AdminDestinations />} />
             <Route path="tours" element={<AdminTours />} />
             <Route path="payments" element={<AdminPayments />} />
+            <Route path="reviews" element={<AdminReviews />} />
             <Route path="reports" element={<AdminReports />} />
             <Route path="settings" element={<AdminSettings />} />
             <Route path="profile" element={<AdminProfile />} />
@@ -80,6 +89,7 @@ function AppContent() {
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
           </Route>
 
+          {/* User Dashboard Routes */}
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<UserDashboard />} />
             <Route path="dashboard" element={<UserDashboard />} />

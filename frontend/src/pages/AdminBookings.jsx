@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Calendar, Plane, Hotel, Compass, CheckCircle, XCircle, Clock, Eye, User, Phone, Mail } from 'lucide-react';
+import { 
+  Plane, Hotel, Compass, CheckCircle, XCircle, Clock, 
+  Eye, User, Mail, Phone, Calendar, DollarSign, 
+  ChevronDown, ChevronUp 
+} from 'lucide-react';
 
 export default function AdminBookings() {
   const [bookings, setBookings] = useState([]);
@@ -8,6 +12,7 @@ export default function AdminBookings() {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [expandedUser, setExpandedUser] = useState(null);
 
   useEffect(() => {
     fetchBookings();
@@ -36,15 +41,25 @@ export default function AdminBookings() {
     setUpdating(true);
     try {
       const token = localStorage.getItem('accessToken');
-      await axios.put(
+      const response = await axios.put(
         `http://localhost:5000/api/admin/bookings/${bookingId}/status`,
         { status: newStatus },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { 
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          } 
+        }
       );
-      alert(`✅ Booking ${newStatus} successfully!`);
-      fetchBookings();
+      
+      if (response.data.success) {
+        alert(`✅ Booking ${newStatus} successfully!`);
+        fetchBookings();
+      } else {
+        alert(`❌ ${response.data.message || 'Failed to update booking status'}`);
+      }
     } catch (err) {
-      console.error('Error updating booking:', err);
+      console.error('❌ Error updating booking:', err);
       alert('❌ Failed to update booking status.');
     }
     setUpdating(false);
@@ -52,20 +67,42 @@ export default function AdminBookings() {
 
   const getStatusBadge = (status) => {
     const badges = {
-      'confirmed': 'bg-green-100 text-green-700',
-      'pending': 'bg-yellow-100 text-yellow-700',
-      'cancelled': 'bg-red-100 text-red-700'
+      'confirmed': 'bg-green-100 text-green-700 border-green-200',
+      'pending': 'bg-yellow-100 text-yellow-700 border-yellow-200',
+      'cancelled': 'bg-red-100 text-red-700 border-red-200'
     };
-    return badges[status] || 'bg-gray-100 text-gray-700';
+    return badges[status] || 'bg-gray-100 text-gray-700 border-gray-200';
   };
 
-  const getBookingIcon = (type) => {
-    const icons = {
-      'flight': <Plane size={20} className="text-indigo-500" />,
-      'hotel': <Hotel size={20} className="text-indigo-500" />,
-      'tour': <Compass size={20} className="text-indigo-500" />
-    };
-    return icons[type] || <Calendar size={20} className="text-indigo-500" />;
+  const getStatusIcon = (status) => {
+    switch(status) {
+      case 'confirmed': return <CheckCircle size={16} className="text-green-600" />;
+      case 'cancelled': return <XCircle size={16} className="text-red-600" />;
+      default: return <Clock size={16} className="text-yellow-600" />;
+    }
+  };
+
+  // Group bookings by user
+  const groupedBookings = bookings.reduce((acc, booking) => {
+    const key = booking.email || booking.user_id;
+    if (!acc[key]) {
+      acc[key] = {
+        user: {
+          id: booking.user_id,
+          first_name: booking.first_name,
+          second_name: booking.second_name,
+          email: booking.email,
+          phone: booking.phone
+        },
+        bookings: []
+      };
+    }
+    acc[key].bookings.push(booking);
+    return acc;
+  }, {});
+
+  const toggleUser = (email) => {
+    setExpandedUser(expandedUser === email ? null : email);
   };
 
   if (loading) {
@@ -84,127 +121,147 @@ export default function AdminBookings() {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">📋 All Bookings</h1>
-          <p className="text-sm text-gray-500">Manage all user bookings and update their status</p>
+          <h1 className="text-2xl font-bold text-gray-800">📋 Booking Management</h1>
+          <p className="text-sm text-gray-500">Manage all user bookings - confirm, pending, or cancel user requests</p>
         </div>
         <span className="text-sm bg-indigo-100 text-indigo-600 px-3 py-1 rounded-full">
           {bookings.length} bookings
         </span>
       </div>
 
-      {bookings.length === 0 ? (
+      {Object.keys(groupedBookings).length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center">
-          <Calendar size={48} className="text-gray-300 mx-auto mb-3" />
           <p className="text-gray-500">No bookings found</p>
         </div>
       ) : (
         <div className="space-y-4">
-          {bookings.map((booking) => (
-            <div key={booking.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    {getBookingIcon(booking.booking_type)}
-                    <h3 className="font-semibold text-gray-800">{booking.item_name || 'Booking'}</h3>
-                    <span className={`px-2 py-1 text-xs rounded-full ${getStatusBadge(booking.status)}`}>
-                      {booking.status || 'Pending'}
-                    </span>
+          {Object.values(groupedBookings).map((group) => (
+            <div key={group.user.email} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              {/* User Header - Clickable */}
+              <div 
+                className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition"
+                onClick={() => toggleUser(group.user.email)}
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold">
+                    {group.user.first_name?.[0]}{group.user.second_name?.[0]}
                   </div>
-                  
-                  {/* User Info */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm mb-2">
-                    <div>
-                      <p className="text-gray-400">Booking ID</p>
-                      <p className="font-medium text-gray-700">#{booking.id}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400">User</p>
-                      <p className="font-medium text-gray-700">{booking.first_name} {booking.second_name}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400">Email</p>
-                      <p className="font-medium text-gray-700 text-sm">{booking.email}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400">Phone</p>
-                      <p className="font-medium text-gray-700">{booking.phone || 'N/A'}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                    <div>
-                      <p className="text-gray-400">Travel Date</p>
-                      <p className="font-medium text-gray-700">{new Date(booking.travel_date).toLocaleDateString()}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400">Total Price</p>
-                      <p className="font-medium text-gray-700">${booking.total_price || 0}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400">Travelers</p>
-                      <p className="font-medium text-gray-700">{booking.number_of_travelers || 1}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400">Payment</p>
-                      <p className={`font-medium ${booking.payment_status === 'paid' ? 'text-green-600' : 'text-yellow-600'}`}>
-                        {booking.payment_status || 'Pending'}
-                      </p>
-                    </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-800">
+                      {group.user.first_name} {group.user.second_name}
+                    </h3>
+                    <p className="text-sm text-gray-500">{group.user.email}</p>
                   </div>
                 </div>
-                
-                {/* Actions */}
-                <div className="flex flex-wrap gap-2">
-                  {booking.status === 'pending' && (
-                    <>
-                      <button
-                        onClick={() => updateStatus(booking.id, 'confirmed')}
-                        disabled={updating}
-                        className="flex items-center gap-1 px-3 py-2 text-sm bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition disabled:opacity-50"
-                      >
-                        <CheckCircle size={16} /> Confirm
-                      </button>
-                      <button
-                        onClick={() => updateStatus(booking.id, 'cancelled')}
-                        disabled={updating}
-                        className="flex items-center gap-1 px-3 py-2 text-sm bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition disabled:opacity-50"
-                      >
-                        <XCircle size={16} /> Cancel
-                      </button>
-                    </>
-                  )}
-                  {booking.status === 'confirmed' && (
-                    <button
-                      onClick={() => updateStatus(booking.id, 'cancelled')}
-                      disabled={updating}
-                      className="flex items-center gap-1 px-3 py-2 text-sm bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition disabled:opacity-50"
-                    >
-                      <XCircle size={16} /> Cancel
-                    </button>
-                  )}
-                  {booking.status === 'cancelled' && (
-                    <button
-                      onClick={() => updateStatus(booking.id, 'pending')}
-                      disabled={updating}
-                      className="flex items-center gap-1 px-3 py-2 text-sm bg-yellow-50 text-yellow-600 rounded-lg hover:bg-yellow-100 transition disabled:opacity-50"
-                    >
-                      <Clock size={16} /> Reopen
-                    </button>
-                  )}
-                  <button
-                    onClick={() => {
-                      setSelectedBooking(booking);
-                      setShowModal(true);
-                    }}
-                    className="flex items-center gap-1 px-3 py-2 text-sm bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition"
-                  >
-                    <Eye size={16} /> Details
-                  </button>
+                <div className="flex items-center gap-4">
+                  <span className="text-sm text-gray-500">{group.bookings.length} bookings</span>
+                  {expandedUser === group.user.email ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                 </div>
               </div>
+
+              {/* Bookings List - Expandable */}
+              {expandedUser === group.user.email && (
+                <div className="border-t border-gray-100">
+                  {group.bookings.map((booking) => (
+                    <div key={booking.id} className="p-4 border-b border-gray-50 hover:bg-gray-50 transition">
+                      <div className="flex flex-wrap items-center justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2 flex-wrap">
+                            <span className="font-medium text-gray-800">#{booking.id}</span>
+                            <span className={`px-2 py-1 text-xs rounded-full border ${getStatusBadge(booking.status)} flex items-center gap-1`}>
+                              {getStatusIcon(booking.status)}
+                              {booking.status || 'Pending'}
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              {booking.booking_type || 'Unknown'}
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              {booking.travel_date || 'N/A'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm">
+                            <span className="text-gray-600">{booking.item_name || 'Booking'}</span>
+                            <span className="text-gray-400">|</span>
+                            <span className="text-gray-600">${booking.total_price || 0}</span>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {booking.status === 'pending' && (
+                            <>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); updateStatus(booking.id, 'confirmed'); }}
+                                disabled={updating}
+                                className="px-3 py-1.5 text-xs bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition disabled:opacity-50"
+                              >
+                                ✅ Confirm
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); updateStatus(booking.id, 'pending'); }}
+                                disabled={updating}
+                                className="px-3 py-1.5 text-xs bg-yellow-50 text-yellow-600 rounded-lg hover:bg-yellow-100 transition disabled:opacity-50"
+                              >
+                                ⏳ Pending
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); updateStatus(booking.id, 'cancelled'); }}
+                                disabled={updating}
+                                className="px-3 py-1.5 text-xs bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition disabled:opacity-50"
+                              >
+                                ❌ Cancel
+                              </button>
+                            </>
+                          )}
+                          {booking.status === 'confirmed' && (
+                            <>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); updateStatus(booking.id, 'pending'); }}
+                                disabled={updating}
+                                className="px-3 py-1.5 text-xs bg-yellow-50 text-yellow-600 rounded-lg hover:bg-yellow-100 transition disabled:opacity-50"
+                              >
+                                ⏳ Pending
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); updateStatus(booking.id, 'cancelled'); }}
+                                disabled={updating}
+                                className="px-3 py-1.5 text-xs bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition disabled:opacity-50"
+                              >
+                                ❌ Cancel
+                              </button>
+                            </>
+                          )}
+                          {booking.status === 'cancelled' && (
+                            <>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); updateStatus(booking.id, 'pending'); }}
+                                disabled={updating}
+                                className="px-3 py-1.5 text-xs bg-yellow-50 text-yellow-600 rounded-lg hover:bg-yellow-100 transition disabled:opacity-50"
+                              >
+                                ⏳ Pending
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); updateStatus(booking.id, 'confirmed'); }}
+                                disabled={updating}
+                                className="px-3 py-1.5 text-xs bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition disabled:opacity-50"
+                              >
+                                ✅ Confirm
+                              </button>
+                            </>
+                          )}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setSelectedBooking(booking); setShowModal(true); }}
+                            className="px-3 py-1.5 text-xs bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition"
+                          >
+                            <Eye size={14} /> View
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -212,42 +269,99 @@ export default function AdminBookings() {
 
       {/* Modal for booking details */}
       {showModal && selectedBooking && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl max-w-lg w-full mx-4 p-6 max-h-[80vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-800">Booking Details</h2>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <h2 className="text-xl font-bold text-gray-800">📋 Booking Details</h2>
               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600">
                 ✕
               </button>
             </div>
-            
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                {getBookingIcon(selectedBooking.booking_type)}
-                <span className="font-semibold">{selectedBooking.item_name}</span>
-                <span className={`px-2 py-1 text-xs rounded-full ${getStatusBadge(selectedBooking.status)}`}>
-                  {selectedBooking.status}
-                </span>
-              </div>
-              
-              <div className="border-t border-gray-100 pt-3">
-                <h3 className="font-semibold text-gray-700 mb-2">User Information</h3>
-                <div className="space-y-1 text-sm">
-                  <p className="flex items-center gap-2"><User size={16} className="text-gray-400" /> {selectedBooking.first_name} {selectedBooking.second_name}</p>
-                  <p className="flex items-center gap-2"><Mail size={16} className="text-gray-400" /> {selectedBooking.email}</p>
-                  <p className="flex items-center gap-2"><Phone size={16} className="text-gray-400" /> {selectedBooking.phone || 'N/A'}</p>
+            <div className="p-6 space-y-4">
+              {/* User Info */}
+              <div className="bg-gray-50 rounded-xl p-4">
+                <h3 className="font-semibold text-gray-700 mb-2">👤 User Information</h3>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div><span className="text-gray-500">Name:</span> {selectedBooking.first_name} {selectedBooking.second_name}</div>
+                  <div><span className="text-gray-500">Email:</span> {selectedBooking.email}</div>
+                  <div><span className="text-gray-500">Phone:</span> {selectedBooking.phone || 'N/A'}</div>
+                  <div><span className="text-gray-500">Booking Date:</span> {new Date(selectedBooking.booking_date).toLocaleDateString()}</div>
                 </div>
               </div>
-              
-              <div className="border-t border-gray-100 pt-3">
-                <h3 className="font-semibold text-gray-700 mb-2">Booking Information</h3>
+
+              {/* Booking Info */}
+              <div className="bg-blue-50 rounded-xl p-4">
+                <h3 className="font-semibold text-gray-700 mb-2">📋 Booking Details</h3>
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div><span className="text-gray-400">Booking ID:</span> #{selectedBooking.id}</div>
-                  <div><span className="text-gray-400">Travel Date:</span> {new Date(selectedBooking.travel_date).toLocaleDateString()}</div>
-                  <div><span className="text-gray-400">Total Price:</span> ${selectedBooking.total_price}</div>
-                  <div><span className="text-gray-400">Travelers:</span> {selectedBooking.number_of_travelers || 1}</div>
-                  <div><span className="text-gray-400">Payment:</span> {selectedBooking.payment_status || 'Pending'}</div>
-                  <div><span className="text-gray-400">Booking Date:</span> {new Date(selectedBooking.booking_date).toLocaleDateString()}</div>
+                  <div><span className="text-gray-500">Booking ID:</span> #{selectedBooking.id}</div>
+                  <div><span className="text-gray-500">Type:</span> {selectedBooking.booking_type}</div>
+                  <div><span className="text-gray-500">Item:</span> {selectedBooking.item_name || 'N/A'}</div>
+                  <div><span className="text-gray-500">Travel Date:</span> {selectedBooking.travel_date}</div>
+                  <div><span className="text-gray-500">Total Price:</span> ${selectedBooking.total_price || 0}</div>
+                  <div><span className="text-gray-500">Status:</span> {selectedBooking.status}</div>
+                  <div><span className="text-gray-500">Payment:</span> {selectedBooking.payment_status || 'Pending'}</div>
+                  <div><span className="text-gray-500">Travelers:</span> {selectedBooking.number_of_travelers || 1}</div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="border-t border-gray-100 pt-4">
+                <h3 className="font-semibold text-gray-700 mb-3">⚡ Actions</h3>
+                <div className="flex flex-wrap gap-2">
+                  {selectedBooking.status === 'pending' && (
+                    <>
+                      <button
+                        onClick={() => updateStatus(selectedBooking.id, 'confirmed')}
+                        className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium"
+                      >
+                        ✅ Confirm Booking
+                      </button>
+                      <button
+                        onClick={() => updateStatus(selectedBooking.id, 'pending')}
+                        className="flex-1 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition font-medium"
+                      >
+                        ⏳ Mark as Pending
+                      </button>
+                      <button
+                        onClick={() => updateStatus(selectedBooking.id, 'cancelled')}
+                        className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium"
+                      >
+                        ❌ Cancel Booking
+                      </button>
+                    </>
+                  )}
+                  {selectedBooking.status === 'confirmed' && (
+                    <>
+                      <button
+                        onClick={() => updateStatus(selectedBooking.id, 'pending')}
+                        className="flex-1 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition font-medium"
+                      >
+                        ⏳ Mark as Pending
+                      </button>
+                      <button
+                        onClick={() => updateStatus(selectedBooking.id, 'cancelled')}
+                        className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium"
+                      >
+                        ❌ Cancel Booking
+                      </button>
+                    </>
+                  )}
+                  {selectedBooking.status === 'cancelled' && (
+                    <>
+                      <button
+                        onClick={() => updateStatus(selectedBooking.id, 'pending')}
+                        className="flex-1 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition font-medium"
+                      >
+                        ⏳ Mark as Pending
+                      </button>
+                      <button
+                        onClick={() => updateStatus(selectedBooking.id, 'confirmed')}
+                        className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium"
+                      >
+                        ✅ Confirm Booking
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

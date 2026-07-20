@@ -1,34 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import AdminTopNavbar from './AdminTopNavbar';
 
-const AdminLayout = ({ children }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 1024) {
-        setSidebarOpen(false);
-      } else {
-        setSidebarOpen(true);
-      }
-    };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+const AdminLayout = () => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   return (
-    <div className="admin-layout flex h-screen overflow-hidden bg-gray-50">
-      <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
-      <div
-        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
-          sidebarOpen ? 'lg:ml-60' : 'ml-16'
-        }`}
-      >
-        <AdminTopNavbar toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50/50">
-          {children}
+    <div className="flex h-screen bg-gray-50 overflow-hidden">
+      <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} userRole="admin" />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <AdminTopNavbar toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} isSidebarOpen={isSidebarOpen} />
+        <main className="flex-1 overflow-y-auto p-1.5 bg-gray-50">
+          <Outlet />
         </main>
       </div>
     </div>
